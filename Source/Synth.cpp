@@ -82,6 +82,6 @@ void Synth::noteOff(int note)
 {
     if (voice.note == note) {
         voice.note = -1;
-        voice.velocity = -1;
+        voice.velocity = 0;
     }
 }

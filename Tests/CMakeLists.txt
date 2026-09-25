@@ -3,6 +3,9 @@ juce_add_console_app(JX11Tests PRODUCT_NAME "JX11 Tests")
 target_sources(JX11Tests PRIVATE
     Main.cpp
     VoiceTests.cpp
+    UtilsTests.cpp
+    SynthTests.cpp
+    ${CMAKE_SOURCE_DIR}/Source/Synth.cpp
     )
 
 target_include_directories(JX11Tests PRIVATE ${CMAKE_SOURCE_DIR}/Source)
