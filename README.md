@@ -1,4 +1,7 @@
-## JX11 SYNTH based on JX10
+# JX11 SYNTH based on JX10
+
+[![CI](https://github.com/Nimdze/JX11/actions/workflows/ci.yml/badge.svg)](https://github.com/Nimdze/JX11/ 
+ actions/workflows/ci.yml)                                                                                  
 
 A subtractive synth built with JUCE
 Formats - Standalone, AU, VST3.
@@ -12,7 +15,7 @@ Formats - Standalone, AU, VST3.
 ## One-time setup
 This project expects JUCE to be available at `./juce`. It's not committed to the repo, so create the symlink to your JUCE checkout:
 
-    git clone https://github.com/juce-framework/JUCE.git ~ JUCE                                      
+    git clone https://github.com/juce-framework/JUCE.git ~/JUCE                                     
     ln -s ~/JUCE juce  
 
   Verify: `ls -l juce` should show `juce -> /Users/<you>/JUCE`. 
@@ -47,4 +50,9 @@ Run the standalone from:
 - **"generator does not match the generator used previously"** — the build                               
      directory was configured with a different generator. Use a fresh directory                  (e.g. `build-xcode`) or delete `CMakeCache.txt` and `CMakeFiles/`.
 
-    - **C++ IntelliSense can't find `JuceHeader.h`** — re-run configure after                  adding source files; `JuceHeader.h` is generated at build time.  
+    - **C++ IntelliSense can't find `JuceHeader.h`** — re-run configure after                  adding source files; `JuceHeader.h` is generated at build time. 
+
+  ## License                                                                        
+   This project is licensed under the GNU General Public License v3.0 or later                              
+   (SPDX: `GPL-3.0-or-later`), because it is built on JUCE (GPLv3/commercial)                               
+   and code from [book title]. See [LICENSE](LICENSE) for the full text. 
