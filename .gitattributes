@@ -1,0 +1,16 @@
+# Normalize line endings in the repo                                                                     
+   * text=auto eol=lf                                                                                       
+                                                                                                            
+   # Binary assets                                                                                          
+   *.png  binary                                                                                            
+   *.jpg  binary                                                                                            
+   *.jpeg binary                                                                                            
+   *.gif  binary                                                                                            
+   *.icns binary                                                                                            
+   *.wav  binary                                                                                            
+   *.aif  binary                                                                                            
+                                                                                                            
+   # Project files                                                                                          
+   *.pbxproj -text                                                                                          
+   *.vcxproj text eol=crlf                                                                                  
+   *.sln     text eol=crlf  
