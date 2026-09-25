@@ -1,0 +1,15 @@
+# macOS
+.DS_Store
+
+# CMake build trees (generated, large, machine-specific)
+build/
+build-vscode/
+build-xcode/
+
+# JUCE is an external checkout, symlinked locally — see README
+juce
+
+# Editor / tooling cruft
+*.swp
+*~
+compile_commands.json

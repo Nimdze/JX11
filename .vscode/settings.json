@@ -1,0 +1,9 @@
+{
+  "cmake.buildDirectory": "${workspaceFolder}/build-vscode",
+  "cmake.generator": "Unix Makefiles",
+  "cmake.configureOnOpen": false,
+  "cmake.configureArgs": [
+    "-DCMAKE_C_COMPILER=/usr/bin/clang",
+    "-DCMAKE_CXX_COMPILER=/usr/bin/clang++"
+  ]
+}
