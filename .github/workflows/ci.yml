@@ -11,14 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Checkout JUCE
-        run: >
-          git clone --depth 1 --branch 8.0.12
-          https://github.com/juce-framework/JUCE.git "$HOME/JUCE"
-
-      - name: Link JUCE (repo expects ./juce)
-        run: ln -s "$HOME/JUCE" juce
-
       - name: Configure
         run: >
           cmake -S . -B build -G "Unix Makefiles"

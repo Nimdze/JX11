@@ -7,9 +7,6 @@ build-vscode/
 build-xcode/
 build-asan/
 
-# JUCE is an external checkout, symlinked locally — see README
-juce
-
 # Editor / tooling cruft
 *.swp
 *~
