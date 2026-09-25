@@ -5,7 +5,7 @@
 build/
 build-vscode/
 build-xcode/
-build-asan/   
+build-asan/
 
 # JUCE is an external checkout, symlinked locally — see README
 juce

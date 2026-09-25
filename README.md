@@ -1,7 +1,6 @@
 # JX11 SYNTH based on JX10
 
-[![CI](https://github.com/Nimdze/JX11/actions/workflows/ci.yml/badge.svg)](https://github.com/Nimdze/JX11/ 
- actions/workflows/ci.yml)                                                                                  
+[![CI](https://github.com/Nimdze/JX11/actions/workflows/ci.yml/badge.svg)](https://github.com/Nimdze/JX11/actions/workflows/ci.yml)                                                                                  
 
 A subtractive synth built with JUCE
 Formats - Standalone, AU, VST3.
