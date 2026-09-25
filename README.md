@@ -17,6 +17,9 @@ This project expects JUCE to be available at `./juce`. It's not committed to the
 
   Verify: `ls -l juce` should show `juce -> /Users/<you>/JUCE`. 
 
+## Setup after cloning                                                                                 
+git config core.hooksPath .githooks   # enable the pre-commit test hook  
+
 ## Configure   
 Use a dedicated build directory. The generator is locked in on first configure,  so don't reuse a directory configured with a different generator.    
 
