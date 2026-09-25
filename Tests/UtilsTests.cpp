@@ -9,6 +9,7 @@ class UtilsTests : public juce::UnitTest
 
         void runTest() override
         {
+
             beginTest ("nullptr does not crash");
             protectYourEars (nullptr, 16);
 
