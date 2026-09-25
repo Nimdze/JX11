@@ -1,3 +1,6 @@
+// Copyright (C) 2026 Nimdze
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include "Synth.h"
 #include "Voice.h"
 #include "Utils.h"
