@@ -7,6 +7,7 @@ struct Voice
 
     void reset()
     {
-        note = 0;
+        note = -1;
+        velocity = 0;
     }
 };
