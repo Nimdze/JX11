@@ -6,22 +6,25 @@
 
 class VoiceTests : public juce::UnitTest
 {
-    public:
-        VoiceTests() : juce::UnitTest ("Voice", "JX11") {}
+public:
+    VoiceTests()
+        : juce::UnitTest ("Voice", "JX11")
+    {
+    }
 
-        void runTest() override
-        {
-            beginTest ("reset() clears note and velocity");
+    void runTest() override
+    {
+        beginTest ("reset() clears note and velocity");
 
-            Voice v;
-            v.note = 60;
-            v.velocity = 99;
+        Voice v;
+        v.note = 60;
+        v.velocity = 99;
 
-            v.reset();
+        v.reset();
 
-            expectEquals (v.note, -1);
-            expectEquals (v.velocity, 0);
-        }
+        expectEquals (v.note, -1);
+        expectEquals (v.velocity, 0);
+    }
 };
 
 static VoiceTests voiceTests;

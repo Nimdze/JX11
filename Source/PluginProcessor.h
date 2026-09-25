@@ -16,8 +16,8 @@
 
 //==============================================================================
 /**
-*/
-class JX11AudioProcessor  : public juce::AudioProcessor
+ */
+class JX11AudioProcessor : public juce::AudioProcessor
 {
 public:
     //==============================================================================
@@ -29,9 +29,9 @@ public:
     void releaseResources() override;
     void reset() override;
 
-   #ifndef JucePlugin_PreferredChannelConfigurations
+#ifndef JucePlugin_PreferredChannelConfigurations
     bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
-   #endif
+#endif
 
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
 
@@ -62,9 +62,9 @@ private:
     //==============================================================================
     Synth synth;
 
-    void splitBufferByEvents(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages);
-    void handleMIDI(uint8_t data0, uint8_t data1, uint8_t data2);
-    void render(juce::AudioBuffer<float>& buffer, int sampleCount, int bufferOffset);
+    void splitBufferByEvents (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages);
+    void handleMIDI (uint8_t data0, uint8_t data1, uint8_t data2);
+    void render (juce::AudioBuffer<float>& buffer, int sampleCount, int bufferOffset);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (JX11AudioProcessor)
 };

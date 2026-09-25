@@ -16,8 +16,8 @@
 
 //==============================================================================
 /**
-*/
-class JX11AudioProcessorEditor  : public juce::AudioProcessorEditor
+ */
+class JX11AudioProcessorEditor : public juce::AudioProcessorEditor
 {
 public:
     JX11AudioProcessorEditor (JX11AudioProcessor&);

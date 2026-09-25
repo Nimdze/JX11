@@ -15,21 +15,19 @@
 //==============================================================================
 JX11AudioProcessor::JX11AudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
-     : AudioProcessor (BusesProperties()
-                     #if ! JucePlugin_IsMidiEffect
-                      #if ! JucePlugin_IsSynth
-                       .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
-                      #endif
-                       .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
-                     #endif
-                       )
+    : AudioProcessor (BusesProperties()
+#if !JucePlugin_IsMidiEffect
+#if !JucePlugin_IsSynth
+                          .withInput ("Input", juce::AudioChannelSet::stereo(), true)
+#endif
+                          .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
+#endif
+      )
 #endif
 {
 }
 
-JX11AudioProcessor::~JX11AudioProcessor()
-{
-}
+JX11AudioProcessor::~JX11AudioProcessor() {}
 
 //==============================================================================
 const juce::String JX11AudioProcessor::getName() const
@@ -39,29 +37,29 @@ const juce::String JX11AudioProcessor::getName() const
 
 bool JX11AudioProcessor::acceptsMidi() const
 {
-   #if JucePlugin_WantsMidiInput
+#if JucePlugin_WantsMidiInput
     return true;
-   #else
+#else
     return false;
-   #endif
+#endif
 }
 
 bool JX11AudioProcessor::producesMidi() const
 {
-   #if JucePlugin_ProducesMidiOutput
+#if JucePlugin_ProducesMidiOutput
     return true;
-   #else
+#else
     return false;
-   #endif
+#endif
 }
 
 bool JX11AudioProcessor::isMidiEffect() const
 {
-   #if JucePlugin_IsMidiEffect
+#if JucePlugin_IsMidiEffect
     return true;
-   #else
+#else
     return false;
-   #endif
+#endif
 }
 
 double JX11AudioProcessor::getTailLengthSeconds() const
@@ -71,8 +69,8 @@ double JX11AudioProcessor::getTailLengthSeconds() const
 
 int JX11AudioProcessor::getNumPrograms()
 {
-    return 1;   // NB: some hosts don't cope very well if you tell them there are 0 programs,
-                // so this should be at least 1, even if you're not really implementing programs.
+    return 1; // NB: some hosts don't cope very well if you tell them there are 0 programs,
+              // so this should be at least 1, even if you're not really implementing programs.
 }
 
 int JX11AudioProcessor::getCurrentProgram()
@@ -80,23 +78,19 @@ int JX11AudioProcessor::getCurrentProgram()
     return 0;
 }
 
-void JX11AudioProcessor::setCurrentProgram (int index)
-{
-}
+void JX11AudioProcessor::setCurrentProgram (int index) {}
 
 const juce::String JX11AudioProcessor::getProgramName (int index)
 {
     return {};
 }
 
-void JX11AudioProcessor::changeProgramName (int index, const juce::String& newName)
-{
-}
+void JX11AudioProcessor::changeProgramName (int index, const juce::String& newName) {}
 
 //==============================================================================
 void JX11AudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    synth.allocateResources(sampleRate, samplesPerBlock);
+    synth.allocateResources (sampleRate, samplesPerBlock);
     reset();
 }
 
@@ -113,86 +107,92 @@ void JX11AudioProcessor::reset()
 #ifndef JucePlugin_PreferredChannelConfigurations
 bool JX11AudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
-  #if JucePlugin_IsMidiEffect
+#if JucePlugin_IsMidiEffect
     juce::ignoreUnused (layouts);
     return true;
-  #else
+#else
     // This is the place where you check if the layout is supported.
     // In this template code we only support mono or stereo.
     // Some plugin hosts, such as certain GarageBand versions, will only
     // load plugins that support stereo bus layouts.
-    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
-     && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
+    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono() &&
+        layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
         return false;
 
     // This checks if the input layout matches the output layout
-   #if ! JucePlugin_IsSynth
+#if !JucePlugin_IsSynth
     if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
         return false;
-   #endif
+#endif
 
     return true;
-  #endif
+#endif
 }
 #endif
 
 void JX11AudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels  = getTotalNumInputChannels();
+    auto totalNumInputChannels = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
     // Clear output channels with no input data
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i){
+    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
+    {
         buffer.clear (i, 0, buffer.getNumSamples());
-    }   
-    
-    splitBufferByEvents(buffer, midiMessages);
+    }
+
+    splitBufferByEvents (buffer, midiMessages);
 }
 
-void JX11AudioProcessor::splitBufferByEvents(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
+void JX11AudioProcessor::splitBufferByEvents (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     int bufferOffset = 0;
 
-    for(const auto metadata : midiMessages) {
+    for (const auto metadata : midiMessages)
+    {
         // Render audio from before this event
         int samplesThisSegment = metadata.samplePosition - bufferOffset;
-        if (samplesThisSegment > 0) {
-            render(buffer, samplesThisSegment, bufferOffset);
+        if (samplesThisSegment > 0)
+        {
+            render (buffer, samplesThisSegment, bufferOffset);
             bufferOffset += samplesThisSegment;
         }
 
-        //Handle the incoming event, ignore irrelevant MIDI messages (sysex, etc.)
-        if (metadata.numBytes <= 3){
-            uint8_t data1 = (metadata.numBytes >= 2) ? metadata.data[1] : 0; 
+        // Handle the incoming event, ignore irrelevant MIDI messages (sysex, etc.)
+        if (metadata.numBytes <= 3)
+        {
+            uint8_t data1 = (metadata.numBytes >= 2) ? metadata.data[1] : 0;
             uint8_t data2 = (metadata.numBytes == 3) ? metadata.data[2] : 0;
-            handleMIDI(metadata.data[0], data1, data2); 
+            handleMIDI (metadata.data[0], data1, data2);
         }
     }
 
-    //Render the audio after last MIDI event, if there are no events, this renders everything.
+    // Render the audio after last MIDI event, if there are no events, this renders everything.
     int samplesLastSegment = buffer.getNumSamples() - bufferOffset;
-    if (samplesLastSegment > 0){
-        render(buffer, samplesLastSegment, bufferOffset);
+    if (samplesLastSegment > 0)
+    {
+        render (buffer, samplesLastSegment, bufferOffset);
     }
 
     midiMessages.clear();
 }
 
-void JX11AudioProcessor::handleMIDI(uint8_t data0, uint8_t data1, uint8_t data2)
+void JX11AudioProcessor::handleMIDI (uint8_t data0, uint8_t data1, uint8_t data2)
 {
-    synth.midiMessage(data0, data1, data2);
+    synth.midiMessage (data0, data1, data2);
 }
 
-void JX11AudioProcessor::render(juce::AudioBuffer<float>& buffer, int sampleCount, int bufferOffset)
+void JX11AudioProcessor::render (juce::AudioBuffer<float>& buffer, int sampleCount, int bufferOffset)
 {
-    float* outputBuffers[2] = { nullptr, nullptr };
-    outputBuffers[0] = buffer.getWritePointer(0) + bufferOffset;
-    if (getTotalNumOutputChannels() > 1) {
-        outputBuffers[1] = buffer.getWritePointer(1) +bufferOffset;
+    float* outputBuffers[2] = {nullptr, nullptr};
+    outputBuffers[0] = buffer.getWritePointer (0) + bufferOffset;
+    if (getTotalNumOutputChannels() > 1)
+    {
+        outputBuffers[1] = buffer.getWritePointer (1) + bufferOffset;
     }
 
-    synth.render(outputBuffers, sampleCount);
+    synth.render (outputBuffers, sampleCount);
 }
 
 //==============================================================================

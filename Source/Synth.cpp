@@ -10,15 +10,12 @@ Synth::Synth()
     sampleRate = 44100.0f;
 }
 
-void Synth::allocateResources(double sampleRate_, int /*samplesPerBlock*/)
+void Synth::allocateResources (double sampleRate_, int /*samplesPerBlock*/)
 {
-    sampleRate = static_cast<float>(sampleRate_);
+    sampleRate = static_cast<float> (sampleRate_);
 }
 
-void Synth::deallocateResources()
-{
-
-}
+void Synth::deallocateResources() {}
 
 void Synth::reset()
 {
@@ -26,64 +23,72 @@ void Synth::reset()
     noiseGen.reset();
 }
 
-void Synth::render(float** outputBuffers, int sampleCount)
+void Synth::render (float** outputBuffers, int sampleCount)
 {
     float* outputBufferLeft = outputBuffers[0];
     float* outputBufferRight = outputBuffers[1];
 
-    for(int sample = 0; sample < sampleCount; ++sample) {
+    for (int sample = 0; sample < sampleCount; ++sample)
+    {
 
         float noise = noiseGen.nextValue();
 
         float output = 0.0f;
-        if (voice.note > -1) {
-            output = noise * (static_cast<float>(voice.velocity) / 127.0f) * 0.5f;
+        if (voice.note > -1)
+        {
+            output = noise * (static_cast<float> (voice.velocity) / 127.0f) * 0.5f;
         }
 
         outputBufferLeft[sample] = output;
-        
-        if (outputBufferRight != nullptr) { // if for mono / stereo
+
+        if (outputBufferRight != nullptr)
+        { // if for mono / stereo
             outputBufferRight[sample] = output;
         }
     }
 
-    protectYourEars(outputBufferLeft, sampleCount);
-    if (outputBufferRight != nullptr) {
-            protectYourEars(outputBufferRight, sampleCount);
-        }
-    
+    protectYourEars (outputBufferLeft, sampleCount);
+    if (outputBufferRight != nullptr)
+    {
+        protectYourEars (outputBufferRight, sampleCount);
+    }
 }
 
-void Synth::midiMessage(uint8_t data0, uint8_t data1, uint8_t data2)
+void Synth::midiMessage (uint8_t data0, uint8_t data1, uint8_t data2)
 {
-    switch(data0 & 0xF0) {
-        case 0x80: //Note off
-            noteOff(data1 & 0x7F);
+    switch (data0 & 0xF0)
+    {
+        case 0x80: // Note off
+            noteOff (data1 & 0x7F);
             break;
 
-        case 0x90: { // Note on
+        case 0x90:
+        { // Note on
             uint8_t note = data1 & 0x7F;
             uint8_t velo = data2 & 0x7F;
-            if (velo > 0) {
-                noteOn(note, velo);
+            if (velo > 0)
+            {
+                noteOn (note, velo);
             }
-            else {
-                noteOff(note);
+            else
+            {
+                noteOff (note);
             }
             break;
         }
     }
 }
 
-void Synth::noteOn(int note, int velocity)
+void Synth::noteOn (int note, int velocity)
 {
     voice.note = note;
     voice.velocity = velocity;
 }
 
-void Synth::noteOff(int note)
+void Synth::noteOff (int note)
 {
-    if (voice.note == note) {
+    if (voice.note == note)
+    {
         voice.note = -1;
         voice.velocity = 0;
     }

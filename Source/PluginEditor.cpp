@@ -14,16 +14,15 @@
 
 //==============================================================================
 JX11AudioProcessorEditor::JX11AudioProcessorEditor (JX11AudioProcessor& p)
-    : AudioProcessorEditor (&p), audioProcessor (p)
+    : AudioProcessorEditor (&p)
+    , audioProcessor (p)
 {
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
     setSize (400, 300);
 }
 
-JX11AudioProcessorEditor::~JX11AudioProcessorEditor()
-{
-}
+JX11AudioProcessorEditor::~JX11AudioProcessorEditor() {}
 
 //==============================================================================
 void JX11AudioProcessorEditor::paint (juce::Graphics& g)
