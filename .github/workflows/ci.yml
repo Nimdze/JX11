@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout JUCE
+        run: >
+          git clone --depth 1 --branch 8.0.12
+          https://github.com/juce-framework/JUCE.git "$HOME/JUCE"
+
+      - name: Link JUCE (repo expects ./juce)
+        run: ln -s "$HOME/JUCE" juce
+
+      - name: Configure
+        run: >
+          cmake -S . -B build -G "Unix Makefiles"
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_OSX_ARCHITECTURES=arm64
+
+      - name: Build tests
+        run: cmake --build build --target JX11Tests -j4
+
+      - name: Run tests
+        run: ctest --test-dir build --output-on-failure
