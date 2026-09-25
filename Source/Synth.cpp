@@ -34,7 +34,7 @@ void Synth::render(float** outputBuffers, int sampleCount)
 
         float output = 0.0f;
         if (voice.note > -1) {
-            output = noise * (voice.velocity / 127.0f) * 0.5f;
+            output = noise * (static_cast<float>(voice.velocity) / 127.0f) * 0.5f;
         }
 
         outputBufferLeft[sample] = output;
