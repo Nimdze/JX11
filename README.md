@@ -1,6 +1,6 @@
 # JX11 SYNTH based on JX10
 
-[![CI](https://github.com/Nimdze/JX11/actions/workflows/ci.yml/badge.svg)](https://github.com/Nimdze/JX11/actions/workflows/ci.yml)                                                                                  
+[![CI](https://github.com/Nimdze/JX11/actions/workflows/ci.yml/badge.svg)](https://github.com/Nimdze/JX11/actions/workflows/ci.yml)
 
 A subtractive synth built with JUCE
 Formats - Standalone, AU, VST3.
@@ -14,44 +14,44 @@ Formats - Standalone, AU, VST3.
 ## One-time setup
 This project expects JUCE to be available at `./juce`. It's not committed to the repo, so create the symlink to your JUCE checkout:
 
-    git clone https://github.com/juce-framework/JUCE.git ~/JUCE                                     
-    ln -s ~/JUCE juce  
+    git clone https://github.com/juce-framework/JUCE.git ~/JUCE
+    ln -s ~/JUCE juce
 
-  Verify: `ls -l juce` should show `juce -> /Users/<you>/JUCE`. 
+  Verify: `ls -l juce` should show `juce -> /Users/<you>/JUCE`.
 
-## Setup after cloning                                                                                 
-git config core.hooksPath .githooks   # enable the pre-commit test hook  
+## Setup after cloning
+git config core.hooksPath .githooks   # enable the pre-commit test hook
 
-## Configure   
-Use a dedicated build directory. The generator is locked in on first configure,  so don't reuse a directory configured with a different generator.    
+## Configure
+Use a dedicated build directory. The generator is locked in on first configure,  so don't reuse a directory configured with a different generator.
 
     cmake -B build-vscode -G "Unix Makefiles"
 
-## Build        
+## Build
 cmake --build build-vscode --target JX11_All -j8
 
-Targets: 
+Targets:
 `JX11_All` - all formats + standalone
-`JX11_Standalone`, `JX11_AU`, `JX11_VST3` 
+`JX11_Standalone`, `JX11_AU`, `JX11_VST3`
 
-## Outputs 
+## Outputs
 Built artefacts live under `build-vscode/Source/JX11_artefacts/Debug/`.
-Because `COPY_PLUGIN_AFTER_BUILD` is enabled, AU/VST3 are also copied to:     
+Because `COPY_PLUGIN_AFTER_BUILD` is enabled, AU/VST3 are also copied to:
 
-- `~/Library/Audio/Plug-Ins/Components/JX11.component` 
-- `~/Library/Audio/Plug-Ins/VST3/JX11.vst3` 
+- `~/Library/Audio/Plug-Ins/Components/JX11.component`
+- `~/Library/Audio/Plug-Ins/VST3/JX11.vst3`
 
-Run the standalone from:     
+Run the standalone from:
 
-     open build-vscode/Source/JX11_artefacts/Debug/Standalone/JX11.app                                    
-                                                                              
-## Troubleshooting   
-- **"generator does not match the generator used previously"** — the build                               
+     open build-vscode/Source/JX11_artefacts/Debug/Standalone/JX11.app
+
+## Troubleshooting
+- **"generator does not match the generator used previously"** — the build
      directory was configured with a different generator. Use a fresh directory                  (e.g. `build-xcode`) or delete `CMakeCache.txt` and `CMakeFiles/`.
 
-    - **C++ IntelliSense can't find `JuceHeader.h`** — re-run configure after                  adding source files; `JuceHeader.h` is generated at build time. 
+    - **C++ IntelliSense can't find `JuceHeader.h`** — re-run configure after                  adding source files; `JuceHeader.h` is generated at build time.
 
-  ## License                                                                        
-   This project is licensed under the GNU General Public License v3.0 or later                              
-   (SPDX: `GPL-3.0-or-later`), because it is built on JUCE (GPLv3/commercial)                               
-   and code from [book title]. See [LICENSE](LICENSE) for the full text. 
+  ## License
+   This project is licensed under the GNU General Public License v3.0 or later
+   (SPDX: `GPL-3.0-or-later`), because it is built on JUCE (GPLv3/commercial)
+   and code from [book title]. See [LICENSE](LICENSE) for the full text.
