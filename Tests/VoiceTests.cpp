@@ -18,12 +18,10 @@ public:
 
         Voice v;
         v.note = 60;
-        v.velocity = 99;
 
         v.reset();
 
         expectEquals (v.note, -1);
-        expectEquals (v.velocity, 0);
     }
 };
 

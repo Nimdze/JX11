@@ -2,15 +2,29 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #pragma once
+#include "Oscillator.h"
 
 struct Voice
 {
     int note;
-    int velocity;
+    Oscillator osc; // for now voice uses only Oscillator
+
+    float saw;
 
     void reset()
     {
         note = -1;
-        velocity = 0;
+        osc.reset();
+
+        saw = 0.0f;
     }
+
+    float render()
+    {
+        float sample = osc.nextSample();
+        saw = saw * 0.997f + sample;
+        return saw;
+    }
+
+
 };

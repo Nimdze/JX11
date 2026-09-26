@@ -5,6 +5,7 @@ target_sources(JX11Tests PRIVATE
     VoiceTests.cpp
     UtilsTests.cpp
     SynthTests.cpp
+    SinOscillatorTests.cpp
     ${CMAKE_SOURCE_DIR}/Source/Synth.cpp
     )
 

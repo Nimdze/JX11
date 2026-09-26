@@ -17,11 +17,15 @@ target_sources(JX11 PRIVATE
     PluginProcessor.h
     PluginEditor.cpp
     PluginEditor.h
+    Utils.h
+    Constants.h
     Synth.cpp
     Synth.h
     Voice.h
     NoiseGenerator.h
-    Utils.h
+    Oscillator.h
+    SinOscillator.h
+    
 )
 
 target_compile_features(JX11 PRIVATE cxx_std_17)
