@@ -1,3 +1,6 @@
+// Copyright (C) 2026 Nimdze
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #pragma once
 
 #include <cmath>
@@ -14,9 +17,9 @@ public:
     {
         phase = 0.0f;
 
-        sin0 = amplitude * std::sin(phase * 2 * PI);
-        sin1 = amplitude * std::sin((phase - inc) * 2 * PI);
-        dsin = 2.0f * std::cos(inc * 2 * PI);
+        sin0 = amplitude * std::sin (phase * 2 * PI);
+        sin1 = amplitude * std::sin ((phase - inc) * 2 * PI);
+        dsin = 2.0f * std::cos (inc * 2 * PI);
     }
 
     float nextSample()
@@ -27,14 +30,14 @@ public:
         return sinx;
     }
 
-    private: 
-        float sin0;
-        float sin1;
-        float dsin;
+private:
+    float sin0;
+    float sin1;
+    float dsin;
 };
 
 /*
-sin(a + b) + sin(a − b) = 2·cos(b)·sin(a)  
-sin(ω(n+1)) + sin(ω(n−1)) = 2·cos(ω)·sin(ωn)    
-sin(ω(n+1)) = 2·cos(ω)·sin(ωn) − sin(ω(n−1))   
+sin(a + b) + sin(a − b) = 2·cos(b)·sin(a)
+sin(ω(n+1)) + sin(ω(n−1)) = 2·cos(ω)·sin(ωn)
+sin(ω(n+1)) = 2·cos(ω)·sin(ωn) − sin(ω(n−1))
 */

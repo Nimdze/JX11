@@ -13,6 +13,7 @@ target_include_directories(JX11Tests PRIVATE ${CMAKE_SOURCE_DIR}/Source)
 
 target_link_libraries(JX11Tests PRIVATE
     juce::juce_core
+    juce::juce_audio_processors
     juce::juce_recommended_warning_flags
     )
 

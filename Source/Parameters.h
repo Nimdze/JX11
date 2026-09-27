@@ -1,0 +1,118 @@
+// Copyright (C) 2026 Nimdze
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+#pragma once
+
+#include <juce_audio_processors/juce_audio_processors.h>
+#include <memory>
+
+#include "ParameterList.h"
+
+namespace Params
+{
+
+using ToTextFn = juce::String (*) (float value, int maxLength);
+
+struct Spec
+{
+    const char* id;
+    const char* name;
+    const char* label; // "" if none
+    float min, max, interval, skew;
+    bool symmetricSkew;
+    float defaultValue;
+    const char* const* choices; // nullptr => float param
+    int numChoices;
+    ToTextFn toText; // nullptr => JUCE default formatting
+};
+
+// Choice lists outside the table - spec trivially copyable
+inline const char* const kGlideModeChoices[] = {"Off", "Legato", "Always"};
+inline const char* const kPolyModeChoices[] = {"Mono", "Poly"};
+
+// --- value to text (UI thread only) ---
+inline juce::String oscMixToText (float value, int)
+{
+    char s[16] = {};
+    snprintf (s, sizeof (s), "%4.0f:%2.0f", 100.0f - 0.5f * value, 0.5f * value);
+    return juce::String (s);
+}
+inline juce::String filterVelocityToText (float value, int)
+{
+    return value < -90.0f ? juce::String ("OFF") : juce::String (value);
+}
+inline juce::String lfoRateToText (float value, int)
+{
+    return juce::String (std::exp (7.0f * value - 4.0f), 3);
+}
+inline juce::String vibratoToText (float value, int)
+{
+    return value < 0.0f ? "PWM " + juce::String (-value, 1) : juce::String (value, 1);
+}
+
+// must follow the exact order in ParameterList.h
+inline const Spec kSpecs[NumParams] = {
+    // id,             name,            label,  min,     max,     interval, skew,  sym,   default, choices, n, toText
+    {"oscMix", "Osc Mix", "%", 0.0f, 100.0f, 0.0f, 1.0f, false, 0.0f, nullptr, 0, oscMixToText},
+    {"oscTune", "Osc Tune", "semi", -24.0f, 24.0f, 1.0f, 1.0f, false, -12.0f, nullptr, 0, nullptr},
+    {"oscFine", "Osc Fine", "cent", -50.0f, 50.0f, 0.1f, 0.3f, true, 0.0f, nullptr, 0, nullptr},
+    {"glideMode", "Glide Mode", "", 0.0f, 2.0f, 1.0f, 1.0f, false, 0.0f, kGlideModeChoices, 3, nullptr},
+    {"glideRate", "Glide Rate", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 35.0f, nullptr, 0, nullptr},
+    {"glideBend", "Glide Bend", "semi", -36.0f, 36.0f, 0.01f, 0.4f, true, 0.0f, nullptr, 0, nullptr},
+    {"filterFreq", "Filter Freq", "%", 0.0f, 100.0f, 0.1f, 1.0f, false, 100.0f, nullptr, 0, nullptr},
+    {"filterReso", "Filter Reso", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 15.0f, nullptr, 0, nullptr},
+    {"filterEnv", "Filter Env", "%", -100.0f, 100.0f, 0.1f, 1.0f, false, 50.0f, nullptr, 0, nullptr},
+    {"filterLFO", "Filter LFO", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 0.0f, nullptr, 0, nullptr},
+    {"filterVelocity", "Velocity", "%", -100.0f, 100.0f, 1.0f, 1.0f, false, 0.0f, nullptr, 0, filterVelocityToText},
+    {"filterAttack", "Filter Attack", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 0.0f, nullptr, 0, nullptr},
+    {"filterDecay", "Filter Decay", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 30.0f, nullptr, 0, nullptr},
+    {"filterSustain", "Filter Sustain", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 0.0f, nullptr, 0, nullptr},
+    {"filterRelease", "Filter Release", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 25.0f, nullptr, 0, nullptr},
+    {"envAttack", "Env Attack", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 0.0f, nullptr, 0, nullptr},
+    {"envDecay", "Env Decay", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 50.0f, nullptr, 0, nullptr},
+    {"envSustain", "Env Sustain", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 100.0f, nullptr, 0, nullptr},
+    {"envRelease", "Env Release", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 30.0f, nullptr, 0, nullptr},
+    {"lfoRate", "LFO Rate", "Hz", 0.0f, 1.0f, 0.0f, 1.0f, false, 0.81f, nullptr, 0, lfoRateToText},
+    {"vibrato", "Vibrato", "%", -100.0f, 100.0f, 1.0f, 1.0f, false, 0.0f, nullptr, 0, vibratoToText},
+    {"noise", "Noise", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 0.0f, nullptr, 0, nullptr},
+    {"octave", "Octave", "", -2.0f, 2.0f, 1.0f, 1.0f, false, 0.0f, nullptr, 0, nullptr},
+    {"tuning", "Tuning", "cent", -100.0f, 100.0f, 0.1f, 1.0f, false, 0.0f, nullptr, 0, nullptr},
+    {"outputLevel", "Output Level", "dB", -24.0f, 6.0f, 0.1f, 1.0f, false, 0.0f, nullptr, 0, nullptr},
+    {"polyMode", "Polyphony", "", 0.0f, 1.0f, 1.0f, 1.0f, false, 1.0f, kPolyModeChoices, 2, nullptr},
+};
+
+inline juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
+{
+    juce::AudioProcessorValueTreeState::ParameterLayout layout;
+
+    for (int i = 0; i < NumParams; ++i)
+    {
+        const auto& s = kSpecs[i];
+
+        if (s.choices != nullptr)
+        {
+            layout.add (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID{s.id, 1}, s.name,
+                                                                      juce::StringArray (s.choices, s.numChoices),
+                                                                      static_cast<int> (s.defaultValue)));
+        }
+
+        else
+        {
+            auto attributes = juce::AudioParameterFloatAttributes();
+
+            if (s.label != nullptr && *s.label != 0)
+                attributes = attributes.withLabel (s.label);
+            if (s.toText != nullptr)
+                attributes = attributes.withStringFromValueFunction (s.toText);
+
+            layout.add (std::make_unique<juce::AudioParameterFloat> (
+                juce::ParameterID{s.id, 1}, s.name,
+                juce::NormalisableRange<float> (s.min, s.max, s.interval, s.skew, s.symmetricSkew), s.defaultValue,
+                attributes));
+        }
+    }
+    return layout;
+}
+
+static_assert (NumParams == 26, "spec table out of sync with the enum");
+} // namespace Params

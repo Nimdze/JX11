@@ -17,11 +17,17 @@ target_sources(JX11 PRIVATE
     PluginProcessor.h
     PluginEditor.cpp
     PluginEditor.h
+
     Utils.h
     Constants.h
-    Synth.cpp
-    Synth.h
+    Parameters.h
+    ParameterList.h
+    Preset.h
+    Preset.cpp
+
     Voice.h
+    Synth.h
+    Synth.cpp
     NoiseGenerator.h
     Oscillator.h
     SinOscillator.h
@@ -34,6 +40,7 @@ target_compile_definitions(JX11 PRIVATE
     JUCE_VST3_CAN_REPLACE_VST2=0
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
+    DONT_SET_USING_JUCE_NAMESPACE=1
 )
 
 target_link_libraries(JX11 PRIVATE

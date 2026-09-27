@@ -17,6 +17,8 @@
 //==============================================================================
 /**
  */
+// Placeholder UI. Not reachable yet — createEditor() uses GenericAudioProcessorEditor
+// until the "User interface" chapter wires this in.
 class JX11AudioProcessorEditor : public juce::AudioProcessorEditor
 {
 public:

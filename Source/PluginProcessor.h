@@ -12,12 +12,17 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include <array>
+#include <atomic>
+
 #include "Synth.h"
+#include "Preset.h"
+#include "Parameters.h"
 
 //==============================================================================
 /**
  */
-class JX11AudioProcessor : public juce::AudioProcessor
+class JX11AudioProcessor : public juce::AudioProcessor, private juce::ValueTree::Listener, private juce::Timer
 {
 public:
     //==============================================================================
@@ -58,13 +63,42 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    juce::AudioProcessorValueTreeState apvts{*this, nullptr, "Parameters", Params::createParameterLayout()};
+
 private:
     //==============================================================================
-    Synth synth;
+    // Parameter Plumbing - audio thread reads paramValues
+    //==============================================================================
+    void update();
+    std::array<std::atomic<float>*, Params::NumParams> paramValues{};
 
-    void splitBufferByEvents (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages);
+    //==============================================================================
+    // Presets - message thread
+    //==============================================================================
+    std::vector<Preset> presets;
+    int currentProgram = 0;
+
+    //==============================================================================
+    // Audio path - audio thread
+    //==============================================================================
+    Synth synth;
+    void splitBufferByEvents (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midimessages);
     void handleMIDI (uint8_t data0, uint8_t data1, uint8_t data2);
     void render (juce::AudioBuffer<float>& buffer, int sampleCount, int bufferOffset);
+
+    //==============================================================================
+    // Cross-thread handshakes
+    //==============================================================================
+    std::atomic<bool> parametersChanged{false};
+    std::atomic<int> pendingProgram{-1};
+    std::atomic<bool> resetRequested{false};
+
+    void valueTreePropertyChanged (juce::ValueTree&, const juce::Identifier&) override
+    {
+        parametersChanged.store (true, std::memory_order_relaxed);
+    }
+
+    void timerCallback() override;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (JX11AudioProcessor)
 };

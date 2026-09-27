@@ -10,6 +10,9 @@ Synth::Synth()
     sampleRate = 44100.0f;
 }
 
+// =============================
+// Basic operations
+// =============================
 void Synth::allocateResources (double sampleRate_, int /*samplesPerBlock*/)
 {
     sampleRate = static_cast<float> (sampleRate_);
@@ -23,6 +26,9 @@ void Synth::reset()
     noiseGen.reset();
 }
 
+// =============================
+// Audio Rendering
+// =============================
 void Synth::render (float** outputBuffers, int sampleCount)
 {
     float* outputBufferLeft = outputBuffers[0];
@@ -31,12 +37,12 @@ void Synth::render (float** outputBuffers, int sampleCount)
     for (int sample = 0; sample < sampleCount; ++sample)
     {
 
-        float noise = noiseGen.nextValue();
+        float noise = noiseGen.nextValue() * noiseMix;
 
         float output = 0.0f;
         if (voice.note > -1)
         {
-            output = voice.render();
+            output = voice.render() + noise;
         }
 
         outputBufferLeft[sample] = output;
@@ -47,12 +53,14 @@ void Synth::render (float** outputBuffers, int sampleCount)
         }
     }
 
-    protectYourEars (outputBufferLeft, sampleCount);
+    guardFlags.fetch_or (protectYourEars (outputBufferLeft, sampleCount), std::memory_order_relaxed);
     if (outputBufferRight != nullptr)
-    {
-        protectYourEars (outputBufferRight, sampleCount);
-    }
+        guardFlags.fetch_or (protectYourEars (outputBufferRight, sampleCount), std::memory_order_relaxed);
 }
+
+// =============================
+// MIDI handeling
+// =============================
 
 void Synth::midiMessage (uint8_t data0, uint8_t data1, uint8_t data2)
 {
@@ -83,10 +91,10 @@ void Synth::noteOn (int note, int velocity)
 {
     voice.note = note;
 
-    float freq = 440.0f * std::exp2(float(note - 69) / 12.0f);
+    float freq = 440.0f * std::exp2 (float (note - 69) / 12.0f);
 
-    voice.osc.amplitude = (static_cast<float>(velocity)/ 127.0f) * 0.5f;
-    
+    voice.osc.amplitude = (static_cast<float> (velocity) / 127.0f) * 0.5f;
+
     voice.osc.period = sampleRate / freq;
     voice.osc.reset();
 }

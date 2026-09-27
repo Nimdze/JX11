@@ -4,15 +4,24 @@
 /*
   ==============================================================================
 
-    This file contains the basic framework code for a JUCE plugin processor.
+    JX11AudioProcessor — the host-facing object for the plugin.
+
+    Threading model
+
+    message thread: constructor, setCurrentProgram, get/setStateInformation, timerCallback
+    audio thread:   processBlock -> splitBufferByEvents -> handleMIDI / render -> update
+    The two threads communicate only through the atomics in the "Cross-thread handshakes"
+    section of the header (parametersChanged, pendingProgram, resetRequested).
 
   ==============================================================================
 */
 
 #include "PluginProcessor.h"
-#include "PluginEditor.h"
+#include "Parameters.h"
+#include "Utils.h"
 
 //==============================================================================
+
 JX11AudioProcessor::JX11AudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
     : AudioProcessor (BusesProperties()
@@ -25,72 +34,32 @@ JX11AudioProcessor::JX11AudioProcessor()
       )
 #endif
 {
+    for (int i = 0; i < Params::NumParams; ++i)
+    {
+        paramValues[i] = apvts.getRawParameterValue (Params::kSpecs[i].id);
+        jassert (paramValues[i] != nullptr);
+    }
+
+    apvts.state.addListener (this);
+
+    presets = createFactoryPresets();
+    setCurrentProgram (0);
+
+    startTimerHz (30);
 }
 
-JX11AudioProcessor::~JX11AudioProcessor() {}
+JX11AudioProcessor::~JX11AudioProcessor()
+{
+    stopTimer();
+    apvts.state.removeListener (this);
+}
 
 //==============================================================================
-const juce::String JX11AudioProcessor::getName() const
-{
-    return JucePlugin_Name;
-}
 
-bool JX11AudioProcessor::acceptsMidi() const
-{
-#if JucePlugin_WantsMidiInput
-    return true;
-#else
-    return false;
-#endif
-}
-
-bool JX11AudioProcessor::producesMidi() const
-{
-#if JucePlugin_ProducesMidiOutput
-    return true;
-#else
-    return false;
-#endif
-}
-
-bool JX11AudioProcessor::isMidiEffect() const
-{
-#if JucePlugin_IsMidiEffect
-    return true;
-#else
-    return false;
-#endif
-}
-
-double JX11AudioProcessor::getTailLengthSeconds() const
-{
-    return 0.0;
-}
-
-int JX11AudioProcessor::getNumPrograms()
-{
-    return 1; // NB: some hosts don't cope very well if you tell them there are 0 programs,
-              // so this should be at least 1, even if you're not really implementing programs.
-}
-
-int JX11AudioProcessor::getCurrentProgram()
-{
-    return 0;
-}
-
-void JX11AudioProcessor::setCurrentProgram (int index) {}
-
-const juce::String JX11AudioProcessor::getProgramName (int index)
-{
-    return {};
-}
-
-void JX11AudioProcessor::changeProgramName (int index, const juce::String& newName) {}
-
-//==============================================================================
 void JX11AudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     synth.allocateResources (sampleRate, samplesPerBlock);
+    parametersChanged.store (true);
     reset();
 }
 
@@ -103,6 +72,8 @@ void JX11AudioProcessor::reset()
 {
     synth.reset();
 }
+
+//==============================================================================
 
 #ifndef JucePlugin_PreferredChannelConfigurations
 bool JX11AudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -130,9 +101,15 @@ bool JX11AudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) con
 }
 #endif
 
+//==============================================================================
+
 void JX11AudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
+
+    if (resetRequested.exchange (false, std::memory_order_relaxed))
+        synth.reset();
+
     auto totalNumInputChannels = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
@@ -140,6 +117,12 @@ void JX11AudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::M
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
     {
         buffer.clear (i, 0, buffer.getNumSamples());
+    }
+
+    bool expected = true;
+    if (isNonRealtime() || parametersChanged.compare_exchange_strong (expected, false))
+    {
+        update();
     }
 
     splitBufferByEvents (buffer, midiMessages);
@@ -180,6 +163,10 @@ void JX11AudioProcessor::splitBufferByEvents (juce::AudioBuffer<float>& buffer, 
 
 void JX11AudioProcessor::handleMIDI (uint8_t data0, uint8_t data1, uint8_t data2)
 {
+    if ((data0 & 0xF0) == 0xC0)
+    {
+        pendingProgram.store (static_cast<int> (data1), std::memory_order_release);
+    }
     synth.midiMessage (data0, data1, data2);
 }
 
@@ -196,6 +183,90 @@ void JX11AudioProcessor::render (juce::AudioBuffer<float>& buffer, int sampleCou
 }
 
 //==============================================================================
+
+void JX11AudioProcessor::update()
+{
+    for (int i = 0; i < Params::NumParams; ++i)
+    {
+        const float value = paramValues[i]->load (std::memory_order_relaxed);
+
+        switch (i)
+        {
+            case Params::noise:
+            {
+                float noiseMix = value / 100.0f;
+                noiseMix *= noiseMix;
+                synth.noiseMix = noiseMix * 0.06f;
+                break;
+            }
+
+            default:
+                break; // parameters not yet wired
+        }
+    }
+}
+
+//==============================================================================
+
+void JX11AudioProcessor::timerCallback()
+{
+    const int requested = pendingProgram.exchange (-1, std::memory_order_acquire);
+    if (requested >= 0)
+        setCurrentProgram (requested);
+
+    const unsigned flags = synth.takeGuardFlags();
+
+    if (flags & SampleGuardNaN)
+        DBG ("JX11: NaN in output - buffer(s) silenced");
+    if (flags & SampleGuardInf)
+        DBG ("JX11: inf in output - buffer(s) silenced");
+    if (flags & SampleGuardOutOfRange)
+        DBG ("JX11: out-of-range samples - buffer(s) silenced");
+    if (flags & SampleGuardClamped)
+        DBG ("JX11: samples clamped");
+}
+
+//==============================================================================
+
+const juce::String JX11AudioProcessor::getName() const
+{
+    return JucePlugin_Name;
+}
+
+bool JX11AudioProcessor::acceptsMidi() const
+{
+#if JucePlugin_WantsMidiInput
+    return true;
+#else
+    return false;
+#endif
+}
+
+bool JX11AudioProcessor::producesMidi() const
+{
+#if JucePlugin_ProducesMidiOutput
+    return true;
+#else
+    return false;
+#endif
+}
+
+bool JX11AudioProcessor::isMidiEffect() const
+{
+#if JucePlugin_IsMidiEffect
+    return true;
+#else
+    return false;
+#endif
+}
+
+double JX11AudioProcessor::getTailLengthSeconds() const
+{
+    return 0.0;
+}
+
+//==============================================================================
+
 bool JX11AudioProcessor::hasEditor() const
 {
     return true; // (change this to false if you choose to not supply an editor)
@@ -203,21 +274,70 @@ bool JX11AudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* JX11AudioProcessor::createEditor()
 {
-    return new JX11AudioProcessorEditor (*this);
+    // Generic UI while the synth/parameters are in development.
+    // JX11AudioProcessorEditor becomes the real UI in the book's "User interface" chapter.
+    auto editor = new juce::GenericAudioProcessorEditor (*this);
+    editor->setSize (500, 750);
+    return editor;
 }
 
 //==============================================================================
+
+int JX11AudioProcessor::getNumPrograms()
+{
+    return static_cast<int> (presets.size());
+}
+
+int JX11AudioProcessor::getCurrentProgram()
+{
+    return currentProgram;
+}
+
+void JX11AudioProcessor::setCurrentProgram (int index)
+{
+    if (index < 0 || index >= static_cast<int> (presets.size()))
+        return;
+
+    currentProgram = index;
+    const Preset& preset = presets[static_cast<std::size_t> (index)];
+
+    for (int i = 0; i < Params::NumParams; ++i)
+    {
+        if (auto* param = apvts.getParameter (Params::kSpecs[i].id))
+            param->setValueNotifyingHost (param->convertTo0to1 (preset.param[i]));
+    }
+
+    resetRequested.store (true, std::memory_order_relaxed);
+}
+
+const juce::String JX11AudioProcessor::getProgramName (int index)
+{
+    if (index < 0 || index >= static_cast<int> (presets.size()))
+        return {};
+
+    return {presets[static_cast<std::size_t> (index)].name};
+}
+
+void JX11AudioProcessor::changeProgramName (int index, const juce::String& newName)
+{
+    juce::ignoreUnused (index, newName);
+}
+
+//==============================================================================
+
 void JX11AudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
+    copyXmlToBinary (*apvts.copyState().createXml(), destData);
 }
 
 void JX11AudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
+    std::unique_ptr<juce::XmlElement> xml (getXmlFromBinary (data, sizeInBytes));
+    if (xml.get() != nullptr && xml->hasTagName (apvts.state.getType()))
+    {
+        apvts.replaceState (juce::ValueTree::fromXml (*xml));
+        parametersChanged.store (true);
+    }
 }
 
 //==============================================================================

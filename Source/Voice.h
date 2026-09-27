@@ -4,6 +4,7 @@
 #pragma once
 #include "Oscillator.h"
 
+// A single voice produced by the synth (one note)
 struct Voice
 {
     int note;
@@ -25,6 +26,4 @@ struct Voice
         saw = saw * 0.997f + sample;
         return saw;
     }
-
-
 };
