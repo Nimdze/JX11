@@ -6,10 +6,9 @@ picking each one up.
 
 ## Testing
 
-- [ ] **Integration ("self-host") tests for `JX11AudioProcessor`** — construct
-      the processor, call `prepareToPlay` / `processBlock`, assert on output and
-      state. Needs the plugin sources linked into the test target (or extracted
-      into a `STATIC` library shared by `JX11` and `JX11Tests`).
+- [ ] **processBlock output test** — `prepareToPlay` + `processBlock` with a                                                 
+         MIDI note, asserting finite non-silent output. Remaining piece of the                                                  
+         self-host story. 
 - [ ] **pluginval in CI** — currently CI only runs `ctest`. Add a step that
       builds the VST3/AU and runs pluginval.
 - [ ] **pluginval strictness 10** — raise from level 5 (used for local dev) to
@@ -19,6 +18,9 @@ picking each one up.
 - [ ] **MemorySanitizer (MSan)** — catches uninitialised reads (the class of bug
       that hit `Voice::velocity`). Hard to set up: requires all dependencies
       instrumented. Revisit only if needed.
+- [ ] **`currentProgram` not restored with state** — `setStateInformation`                                                   
+         restores parameter values but the program index isn't stored in the state                                              
+         tree, so `getCurrentProgram()` can be stale after a restore.  
 
 ## Plugin / DSP
 

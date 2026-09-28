@@ -12,7 +12,7 @@ class Synth
 {
 public:
     // Synth properties
-    float noiseMix;
+    float noiseMix = 0.0f;
 
     // Basic operations
     Synth();

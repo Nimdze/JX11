@@ -66,13 +66,13 @@ public:
         synth.render (outputs, n);
         expect (isSilent (left, n));
 
-        beginTest ("all channels are excepted");
+        beginTest ("all channels are accepted");
         fresh();
         synth.midiMessage (0x92, 60, 100);
         synth.render (outputs, n);
         expect (!isSilent (left, n));
 
-        beginTest ("note off for a different note doesnt stop the voice");
+        beginTest ("note off for a different note does'nt stop the voice");
         fresh();
         synth.midiMessage (0x90, 60, 100);
         synth.midiMessage (0x80, 62, 0);

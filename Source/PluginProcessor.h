@@ -27,6 +27,7 @@ class JX11AudioProcessor : public juce::AudioProcessor, private juce::ValueTree:
 public:
     //==============================================================================
     JX11AudioProcessor();
+
     ~JX11AudioProcessor() override;
 
     //==============================================================================
@@ -34,10 +35,12 @@ public:
     void releaseResources() override;
     void reset() override;
 
+    //==============================================================================
 #ifndef JucePlugin_PreferredChannelConfigurations
     bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
 #endif
 
+    //==============================================================================
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
 
     //==============================================================================
@@ -69,8 +72,9 @@ private:
     //==============================================================================
     // Parameter Plumbing - audio thread reads paramValues
     //==============================================================================
-    void update();
     std::array<std::atomic<float>*, Params::NumParams> paramValues{};
+
+    void update();
 
     //==============================================================================
     // Presets - message thread
@@ -82,6 +86,7 @@ private:
     // Audio path - audio thread
     //==============================================================================
     Synth synth;
+
     void splitBufferByEvents (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midimessages);
     void handleMIDI (uint8_t data0, uint8_t data1, uint8_t data2);
     void render (juce::AudioBuffer<float>& buffer, int sampleCount, int bufferOffset);

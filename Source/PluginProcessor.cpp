@@ -36,8 +36,8 @@ JX11AudioProcessor::JX11AudioProcessor()
 {
     for (int i = 0; i < Params::NumParams; ++i)
     {
-        paramValues[i] = apvts.getRawParameterValue (Params::kSpecs[i].id);
-        jassert (paramValues[i] != nullptr);
+        paramValues[static_cast<std::size_t> (i)] = apvts.getRawParameterValue (Params::kSpecs[i].id);
+        jassert (paramValues[static_cast<std::size_t> (i)] != nullptr);
     }
 
     apvts.state.addListener (this);
@@ -188,7 +188,7 @@ void JX11AudioProcessor::update()
 {
     for (int i = 0; i < Params::NumParams; ++i)
     {
-        const float value = paramValues[i]->load (std::memory_order_relaxed);
+        const float value = paramValues[static_cast<std::size_t> (i)]->load (std::memory_order_relaxed);
 
         switch (i)
         {
@@ -337,6 +337,7 @@ void JX11AudioProcessor::setStateInformation (const void* data, int sizeInBytes)
     {
         apvts.replaceState (juce::ValueTree::fromXml (*xml));
         parametersChanged.store (true);
+        resetRequested.store (true, std::memory_order_relaxed);
     }
 }
 
