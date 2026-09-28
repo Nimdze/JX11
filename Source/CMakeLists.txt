@@ -28,9 +28,12 @@ target_sources(JX11 PRIVATE
     Voice.h
     Synth.h
     Synth.cpp
+
     NoiseGenerator.h
     Oscillator.h
     SinOscillator.h
+
+    Envelope.h
     
 )
 

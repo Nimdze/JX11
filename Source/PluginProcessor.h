@@ -74,6 +74,11 @@ private:
     //==============================================================================
     std::array<std::atomic<float>*, Params::NumParams> paramValues{};
 
+    float parameterValue (int index) const noexcept
+    {
+        return paramValues[static_cast<std::size_t> (index)]->load (std::memory_order_relaxed);
+    }
+
     void update();
 
     //==============================================================================

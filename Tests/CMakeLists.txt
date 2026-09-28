@@ -8,9 +8,13 @@ target_sources(JX11Tests PRIVATE
     UtilsTests.cpp
     ParameterTests.cpp
     PresetTests.cpp
+
     ProcessorTests.cpp
     SynthTests.cpp
     SinOscillatorTests.cpp
+
+    EnvelopeTests.cpp
+
     ${CMAKE_SOURCE_DIR}/Source/Synth.cpp
     ${CMAKE_SOURCE_DIR}/Source/Preset.cpp
     ${CMAKE_SOURCE_DIR}/Source/PluginProcessor.cpp

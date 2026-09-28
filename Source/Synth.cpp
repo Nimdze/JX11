@@ -38,11 +38,11 @@ void Synth::render (float** outputBuffers, int sampleCount)
     {
 
         float noise = noiseGen.nextValue() * noiseMix;
-
         float output = 0.0f;
-        if (voice.note > -1)
+
+        if (voice.env.isActive())
         {
-            output = voice.render() + noise;
+            output = voice.render (noise);
         }
 
         outputBufferLeft[sample] = output;
@@ -51,6 +51,11 @@ void Synth::render (float** outputBuffers, int sampleCount)
         { // if for mono / stereo
             outputBufferRight[sample] = output;
         }
+    }
+
+    if (!voice.env.isActive())
+    {
+        voice.env.reset();
     }
 
     guardFlags.fetch_or (protectYourEars (outputBufferLeft, sampleCount), std::memory_order_relaxed);
@@ -97,12 +102,19 @@ void Synth::noteOn (int note, int velocity)
 
     voice.osc.period = sampleRate / freq;
     voice.osc.reset();
+
+    Envelope& env = voice.env;
+    env.attackMultiplier = envAttack;
+    env.decayMultiplier = envDecay;
+    env.sustainLevel = envSustain;
+    env.releaseMultiplier = envRelease;
+    env.attack();
 }
 
 void Synth::noteOff (int note)
 {
     if (voice.note == note)
     {
-        voice.note = -1;
+        voice.release();
     }
 }

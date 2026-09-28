@@ -33,12 +33,30 @@ public:
         Synth synth;
         synth.allocateResources (44100.0, n);
 
+        synth.envAttack = 0.75f; // fast
+        synth.envDecay = 0.75f;
+        synth.envSustain = 1.0f;  // hold
+        synth.envRelease = 0.75f; // fast (~32 samples to silence)
+
         // reset synth + zero the buffers before each test
         auto fresh = [&]
         {
             synth.reset();
             std::fill (left, left + n, 0.0f);
             std::fill (right, right + n, 0.0f);
+        };
+
+        auto renderUntilSilent = [&] (int maxBlocks)
+        {
+            for (int b = 0; b < maxBlocks; ++b)
+            {
+                std::fill (left, left + n, 0.0f);
+                std::fill (right, right + n, 0.0f);
+                synth.render (outputs, n);
+                if (isSilent (left, n))
+                    return true;
+            }
+            return false;
         };
 
         beginTest ("silent before any note");
@@ -52,19 +70,19 @@ public:
         synth.render (outputs, n);
         expect (!isSilent (left, n));
 
-        beginTest ("note off produces silence");
+        beginTest ("note off fades to silence");
         fresh();
         synth.midiMessage (0x90, 60, 100);
-        synth.midiMessage (0x80, 60, 0);
         synth.render (outputs, n);
-        expect (isSilent (left, n));
+        synth.midiMessage (0x80, 60, 0);
+        expect (renderUntilSilent (10));
 
         beginTest ("note on with velocity 0 acts as note off");
         fresh();
         synth.midiMessage (0x90, 60, 100);
-        synth.midiMessage (0x90, 60, 0); // off
         synth.render (outputs, n);
-        expect (isSilent (left, n));
+        synth.midiMessage (0x90, 60, 0); // off
+        expect (renderUntilSilent (10));
 
         beginTest ("all channels are accepted");
         fresh();

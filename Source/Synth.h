@@ -13,6 +13,10 @@ class Synth
 public:
     // Synth properties
     float noiseMix = 0.0f;
+    float envAttack = 0.0f;
+    float envDecay = 0.0f;
+    float envSustain = 1.0f;
+    float envRelease = 0.0f;
 
     // Basic operations
     Synth();

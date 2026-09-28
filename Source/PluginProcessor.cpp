@@ -186,24 +186,24 @@ void JX11AudioProcessor::render (juce::AudioBuffer<float>& buffer, int sampleCou
 
 void JX11AudioProcessor::update()
 {
-    for (int i = 0; i < Params::NumParams; ++i)
-    {
-        const float value = paramValues[static_cast<std::size_t> (i)]->load (std::memory_order_relaxed);
 
-        switch (i)
-        {
-            case Params::noise:
-            {
-                float noiseMix = value / 100.0f;
-                noiseMix *= noiseMix;
-                synth.noiseMix = noiseMix * 0.06f;
-                break;
-            }
+    float sampleRate = static_cast<float> (getSampleRate());
+    float inverseSampleRate = 1.0f / sampleRate;
 
-            default:
-                break; // parameters not yet wired
-        }
-    }
+    synth.envAttack = std::exp (-inverseSampleRate * std::exp (5.5f - 0.075f * parameterValue (Params::envAttack)));
+    synth.envDecay = std::exp (-inverseSampleRate * std::exp (5.5f - 0.075f * parameterValue (Params::envDecay)));
+
+    synth.envSustain = parameterValue (Params::envSustain) / 100.0f;
+
+    float envRelease = parameterValue (Params::envRelease);
+    if (envRelease < 1.0f)
+        synth.envRelease = 0.75f; // fast release, still avoids clicks and pops
+    else
+        synth.envRelease = std::exp (-inverseSampleRate * std::exp (5.5f - 0.075f * envRelease));
+
+    float noiseMix = parameterValue (Params::noise) / 100.0f;
+    noiseMix *= noiseMix;
+    synth.noiseMix = noiseMix * 0.06f;
 }
 
 //==============================================================================
