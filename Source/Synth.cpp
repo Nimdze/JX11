@@ -24,6 +24,7 @@ void Synth::reset()
 {
     voice.reset();
     noiseGen.reset();
+    pitchBend = 1.0f;
 }
 
 // =============================
@@ -34,23 +35,30 @@ void Synth::render (float** outputBuffers, int sampleCount)
     float* outputBufferLeft = outputBuffers[0];
     float* outputBufferRight = outputBuffers[1];
 
+    voice.osc1.period = voice.period * pitchBend;
+    voice.osc2.period = voice.osc1.period * detune;
+
     for (int sample = 0; sample < sampleCount; ++sample)
     {
-
         float noise = noiseGen.nextValue() * noiseMix;
-        float output = 0.0f;
+
+        float outputLeft = 0.0f;
+        float outputRight = 0.0f;
 
         if (voice.env.isActive())
         {
-            output = voice.render (noise);
+            float output = voice.render (noise);
+            outputLeft += output * voice.panLeft;
+            outputRight += output * voice.panRight;
         }
-
-        outputBufferLeft[sample] = output;
 
         if (outputBufferRight != nullptr)
         { // if for mono / stereo
-            outputBufferRight[sample] = output;
+            outputBufferLeft[sample] = outputLeft;
+            outputBufferRight[sample] = outputRight;
         }
+        else
+            outputBufferLeft[sample] = (outputLeft + outputRight) * 0.5f;
     }
 
     if (!voice.env.isActive())
@@ -75,8 +83,8 @@ void Synth::midiMessage (uint8_t data0, uint8_t data1, uint8_t data2)
             noteOff (data1 & 0x7F);
             break;
 
-        case 0x90:
-        { // Note on
+        case 0x90: // Note on
+        {
             uint8_t note = data1 & 0x7F;
             uint8_t velo = data2 & 0x7F;
             if (velo > 0)
@@ -89,19 +97,29 @@ void Synth::midiMessage (uint8_t data0, uint8_t data1, uint8_t data2)
             }
             break;
         }
+
+        case 0xE0: // Pitch bend
+            // float(data1 +128 * data2 - 8192) gives anumber between -8192 and 8191
+            // mapping this range to 2^(2/12) to 2^(-2/12) (multiplying the period)
+            // 2^((-2*(data/8192))/12) = (2^((-2/8192)/12))^data = exp^(M*data)
+            pitchBend = std::exp (-0.000014102f * float (data1 + 128 * data2 - 8192));
+            break;
     }
 }
 
 void Synth::noteOn (int note, int velocity)
 {
     voice.note = note;
+    voice.updatePanning();
 
-    float freq = 440.0f * std::exp2 (float (note - 69) / 12.0f);
+    float period = calcPeriod (note);
+    voice.period = period;
 
-    voice.osc.amplitude = (static_cast<float> (velocity) / 127.0f) * 0.5f;
+    voice.osc1.amplitude = (static_cast<float> (velocity) / 127.0f) * 0.5f;
+    // voice.osc1.reset();
 
-    voice.osc.period = sampleRate / freq;
-    voice.osc.reset();
+    voice.osc2.amplitude = voice.osc1.amplitude * oscMix;
+    // voice.osc2.reset();
 
     Envelope& env = voice.env;
     env.attackMultiplier = envAttack;
@@ -117,4 +135,22 @@ void Synth::noteOff (int note)
     {
         voice.release();
     }
+}
+
+float Synth::calcPeriod (int note) const
+{
+    // freq = 440 * 2^((note - 69)/12) = 440 * 2^(-69/12) * 2^(note/12)
+    // per = (sampleRate/(440 * 2^(-69/12))) * 2^(-note/12)
+    // define tune = (sampleRate/(440 * 2^(-69/12)))
+    // 2^(-note/12) = (2^(-1/12))^note = exp^(M * note)
+    float period = tune * std::exp (-0.05776226505f * float (note));
+
+    while (period < 6.0f || (period * detune) < 6.0f)
+    {
+        period += period;
+    }
+    if (period <= 0.0f)
+        period = 6.0f;
+
+    return period;
 }

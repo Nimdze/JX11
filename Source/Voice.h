@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #pragma once
+
+#include <algorithm>
 #include "Oscillator.h"
 #include "Envelope.h"
 
@@ -9,7 +11,12 @@
 struct Voice
 {
     int note;
-    Oscillator osc; // for now voice uses only Oscillator
+    Oscillator osc1; // for now voice doesnt use sinOsc
+    Oscillator osc2;
+
+    float period;
+
+    float panLeft, panRight;
 
     float saw;
 
@@ -18,7 +25,10 @@ struct Voice
     void reset()
     {
         note = -1;
-        osc.reset();
+        panLeft = 0.707f;
+        panRight = 0.707f;
+        osc1.reset();
+        osc2.reset();
 
         saw = 0.0f;
 
@@ -27,8 +37,9 @@ struct Voice
 
     float render (float input)
     {
-        float sample = osc.nextSample();
-        saw = saw * 0.997f + sample;
+        float sample1 = osc1.nextSample();
+        float sample2 = osc2.nextSample();
+        saw = saw * 0.997f + sample1 - sample2;
 
         float output = saw + input;
 
@@ -37,4 +48,12 @@ struct Voice
     }
 
     void release() { env.release(); }
+
+    void updatePanning()
+    {
+        // setting panning according to midi note number, set for 49 keys
+        float panning = std::clamp ((note - 60.0f) / 24.0f, -1.0f, 1.0f);
+        panLeft = std::sin ((PI / 4) * (1.0f - panning));
+        panRight = std::sin ((PI / 4) * (1.0f + panning));
+    }
 };

@@ -13,6 +13,12 @@ class Synth
 public:
     // Synth properties
     float noiseMix = 0.0f;
+    float oscMix = 0.0f;
+
+    float detune = 1.0f;
+    float tune = 0.0f;
+    float pitchBend = 1.0f;
+
     float envAttack = 0.0f;
     float envDecay = 0.0f;
     float envSustain = 1.0f;
@@ -32,6 +38,8 @@ public:
 
     // Guarding against ivalid samples
     unsigned takeGuardFlags() noexcept { return guardFlags.exchange (0, std::memory_order_relaxed); }
+
+    float calcPeriod (int note) const;
 
 private:
     // Synth Properties

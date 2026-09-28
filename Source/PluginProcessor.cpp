@@ -190,6 +190,15 @@ void JX11AudioProcessor::update()
     float sampleRate = static_cast<float> (getSampleRate());
     float inverseSampleRate = 1.0f / sampleRate;
 
+    float octave = parameterValue (Params::octave);
+    float tuning = parameterValue (Params::tuning);
+
+    // define tuneInSemi = (sampleRate/(440 * 2^(-69/12))) = sampleRate/8.1758
+    // 8.1758Hz is the reference freq for MIDI note number 0 so we want exp(0.05776226505f * tuneInSemi) = 1/8.175 -->
+    // tuneInSemi = -36.3763
+    float tuneInSemi = -36.3763f - 12.0f * octave - tuning / 100.0f; // subtracting bcause higher -> period smaller
+    synth.tune = sampleRate * std::exp (0.05776226505f * tuneInSemi);
+
     synth.envAttack = std::exp (-inverseSampleRate * std::exp (5.5f - 0.075f * parameterValue (Params::envAttack)));
     synth.envDecay = std::exp (-inverseSampleRate * std::exp (5.5f - 0.075f * parameterValue (Params::envDecay)));
 
@@ -204,6 +213,16 @@ void JX11AudioProcessor::update()
     float noiseMix = parameterValue (Params::noise) / 100.0f;
     noiseMix *= noiseMix;
     synth.noiseMix = noiseMix * 0.06f;
+
+    synth.oscMix = parameterValue (Params::oscMix) / 100.0f;
+
+    float semi = parameterValue (Params::oscTune);
+    float cent = parameterValue (Params::oscFine);
+    synth.detune = std::pow (
+        1.059463094359f,
+        -semi -
+            0.01f *
+                cent); // multiplying period by 2^(-1/12) increases pitch in 1 semitone, 2^(-N/12) = 1.059463094359^(-N)
 }
 
 //==============================================================================

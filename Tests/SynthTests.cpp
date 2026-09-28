@@ -31,7 +31,12 @@ public:
         float* outputs[2] = {left, right};
 
         Synth synth;
-        synth.allocateResources (44100.0, n);
+        const float sampleRate = 44100.0f;
+        synth.tune = sampleRate * std::exp (0.05776226505f * -36.3763f); // octave 0, tuning 0
+        synth.detune = 1.0f;
+        synth.oscMix = 0.0f;
+
+        synth.allocateResources (sampleRate, n);
 
         synth.envAttack = 0.75f; // fast
         synth.envDecay = 0.75f;
@@ -96,6 +101,59 @@ public:
         synth.midiMessage (0x80, 62, 0);
         synth.render (outputs, n);
         expect (!isSilent (left, n));
+
+        beginTest ("period halves per octave and matches A440");
+        {
+            fresh();
+            synth.detune = 1.0f;
+            synth.tune = sampleRate * std::exp (0.05776226505f * -36.3763f);
+            const float p69 = synth.calcPeriod (69);
+
+            expectWithinAbsoluteError (p69, sampleRate / 440.0f, 0.5f);
+            expectWithinAbsoluteError (synth.calcPeriod (81), p69 * 0.5f, 0.5f); // +12 semitones
+            expectWithinAbsoluteError (synth.calcPeriod (57), p69 * 2.0f, 1.0f); // -12 semitones
+        }
+
+        beginTest ("pitch bend maps centre, max up, max down");
+        {
+            fresh();
+            synth.midiMessage (0xE0, 0, 64); // centre
+            expectWithinAbsoluteError (synth.pitchBend, 1.0f, 1.0e-3f);
+            synth.midiMessage (0xE0, 127, 127); // max up
+            expectWithinAbsoluteError (synth.pitchBend, std::pow (2.0f, -2.0f / 12.0f), 1.0e-3f);
+            synth.midiMessage (0xE0, 0, 0); // max up
+            expectWithinAbsoluteError (synth.pitchBend, std::pow (2.0f, 2.0f / 12.0f), 1.0e-3f);
+        }
+
+        beginTest ("osc2 silent when oscMix is 0");
+        {
+            fresh();
+            synth.oscMix = 0.0f;
+            synth.detune = 1.0f;
+            synth.midiMessage (0x90, 60, 100);
+            synth.render (outputs, n);
+            expect (!isSilent (left, n));
+        }
+
+        beginTest ("equally mixed, undetuned oscillators cancel");
+        {
+            fresh();
+            synth.oscMix = 1.0f;
+            synth.detune = 1.0f;
+            synth.midiMessage (0x90, 60, 100);
+            synth.render (outputs, n);
+            expect (isSilent (left, n)); // sample1 - sample2 == 0
+        }
+
+        beginTest ("detuning prevents cancellation");
+        {
+            fresh();
+            synth.oscMix = 1.0f;
+            synth.detune = 0.994f;
+            synth.midiMessage (0x90, 60, 100);
+            synth.render (outputs, n);
+            expect (!isSilent (left, n));
+        }
     }
 };
 
