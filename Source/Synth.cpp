@@ -27,12 +27,12 @@ void Synth::reset()
 {
     for (int v = 0; v < MAX_VOICES; ++v)
         voices[v].reset();
-        
+
     noiseGen.reset();
     pitchBend = 1.0f;
     sustainPedalPressed = false;
 
-    outputLevelSmoother.reset(sampleRate, 0.05);
+    outputLevelSmoother.reset (sampleRate, 0.05);
 }
 
 // =============================
@@ -46,7 +46,8 @@ void Synth::render (float** outputBuffers, int sampleCount)
     for (int v = 0; v < MAX_VOICES; ++v)
     {
         Voice& voice = voices[v];
-        if (voice.env.isActive()) {
+        if (voice.env.isActive())
+        {
             voice.osc1.period = voice.period * pitchBend;
             voice.osc2.period = voice.osc1.period * detune;
         }
@@ -135,10 +136,9 @@ void Synth::midiMessage (uint8_t data0, uint8_t data1, uint8_t data2)
 
         case 0xB0: // Control change
         {
-            controlChange(data1, data2);
+            controlChange (data1, data2);
             break;
         }
-
     }
 }
 
@@ -151,7 +151,7 @@ void Synth::startVoice (int v, int note, int velocity)
     voice.note = note;
     voice.updatePanning();
 
-    voice.osc1.amplitude = volumeTrim * static_cast<float> (velocity) ;
+    voice.osc1.amplitude = volumeTrim * static_cast<float> (velocity);
     // voice.osc1.reset();
 
     voice.osc2.amplitude = voice.osc1.amplitude * oscMix;
@@ -182,9 +182,9 @@ int Synth::findFreeVoice() const
 }
 
 // Make mono legato not retrigger the envelope
-void Synth::restartMonoVoice(int note, int velocity)
+void Synth::restartMonoVoice (int note, int velocity)
 {
-    float period = calcPeriod(0, note);
+    float period = calcPeriod (0, note);
 
     Voice& voice = voices[0];
     voice.period = period;
@@ -206,10 +206,10 @@ void Synth::shiftQueuedNotes()
 int Synth::nextQueuedNote()
 {
     int held = 0;
-    for (int v = MAX_VOICES -1; v > 0; v--)
+    for (int v = MAX_VOICES - 1; v > 0; v--)
         if (voices[v].note > 0)
             held = v;
-    
+
     if (held > 0)
     {
         int note = voices[held].note;
@@ -220,16 +220,16 @@ int Synth::nextQueuedNote()
     return 0;
 }
 
-void Synth::noteOn(int note, int velocity)
+void Synth::noteOn (int note, int velocity)
 {
     int v = 0; // 0 for mono
 
     if (numVoices == 1) // mono
     {
-        if (voices[0].note > 0) //legato
+        if (voices[0].note > 0) // legato
         {
             shiftQueuedNotes();
-            restartMonoVoice(note, velocity);
+            restartMonoVoice (note, velocity);
             return;
         }
     }
@@ -239,16 +239,16 @@ void Synth::noteOn(int note, int velocity)
         v = findFreeVoice();
     }
 
-    startVoice(v, note, velocity);
+    startVoice (v, note, velocity);
 }
 
 void Synth::noteOff (int note)
 {
-    if ((numVoices ==1) && (voices[0].note == note))
+    if ((numVoices == 1) && (voices[0].note == note))
     {
         int queuedNote = nextQueuedNote();
         if (queuedNote > 0)
-            restartMonoVoice(queuedNote, -1);
+            restartMonoVoice (queuedNote, -1);
     }
 
     for (int v = 0; v < MAX_VOICES; v++)
@@ -257,7 +257,8 @@ void Synth::noteOff (int note)
         {
             if (sustainPedalPressed)
                 voices[v].note = SUSTAIN;
-            else {
+            else
+            {
                 voices[v].release();
                 voices[v].note = 0;
             }
@@ -265,18 +266,19 @@ void Synth::noteOff (int note)
     }
 }
 
-void Synth::controlChange(uint8_t data1, uint8_t data2)
+void Synth::controlChange (uint8_t data1, uint8_t data2)
 {
-    switch (data1) {
+    switch (data1)
+    {
         // Sustain pedal
         case 0x40:
             sustainPedalPressed = (data2 >= 64);
 
             if (!sustainPedalPressed)
-                noteOff(SUSTAIN);
+                noteOff (SUSTAIN);
 
             break;
-        
+
         default: // panic, all notes off - 120 or above
             if (data1 >= 0X78)
             {
@@ -295,7 +297,7 @@ float Synth::calcPeriod (int v, int note) const
     // define tune = (sampleRate/(440 * 2^(-69/12)))
     // 2^(-note/12) = (2^(-1/12))^note = exp^(M * note)
     // adding slight detune per voice to simulate analog synth detune
-    float period = tune * std::exp (-0.05776226505f * (float (note) + ANALOG * float(v)));
+    float period = tune * std::exp (-0.05776226505f * (float (note) + ANALOG * float (v)));
 
     while (period < 6.0f || (period * detune) < 6.0f)
     {

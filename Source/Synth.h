@@ -4,7 +4,7 @@
 #pragma once
 
 #include <juce_core/juce_core.h>
-#include <juce_audio_basics/juce_audio_basics.h>  
+#include <juce_audio_basics/juce_audio_basics.h>
 #include <atomic>
 #include "Voice.h"
 #include "NoiseGenerator.h"
@@ -54,18 +54,18 @@ private:
     bool sustainPedalPressed;
     Voice voices[MAX_VOICES];
 
-    void restartMonoVoice(int note, int velocity); // Make mono legato not retrigger the envelope
-    void shiftQueuedNotes(); // Mono legato note managment upon key release
-    int nextQueuedNote(); // Mono legato note managment upon key release
+    void restartMonoVoice (int note, int velocity); // Make mono legato not retrigger the envelope
+    void shiftQueuedNotes();                        // Mono legato note managment upon key release
+    int nextQueuedNote();                           // Mono legato note managment upon key release
 
     NoiseGenerator noiseGen;
 
     // Voices and MIDI handeling
-    void startVoice(int v, int note, int velocity);
+    void startVoice (int v, int note, int velocity);
     int findFreeVoice() const;
     void noteOn (int note, int velocity);
     void noteOff (int note);
-    void controlChange(uint8_t data1, uint8_t data2);
+    void controlChange (uint8_t data1, uint8_t data2);
 
     // Catching invalid sample type
     std::atomic<unsigned> guardFlags{0};

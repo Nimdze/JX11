@@ -71,7 +71,8 @@ void JX11AudioProcessor::releaseResources()
 void JX11AudioProcessor::reset()
 {
     synth.reset();
-    synth.outputLevelSmoother.setCurrentAndTargetValue(juce::Decibels::decibelsToGain(parameterValue(Params::outputLevel)));
+    synth.outputLevelSmoother.setCurrentAndTargetValue (
+        juce::Decibels::decibelsToGain (parameterValue (Params::outputLevel)));
 }
 
 //==============================================================================
@@ -193,7 +194,7 @@ void JX11AudioProcessor::update()
 
     synth.numVoices = (parameterValue (Params::polyMode) < 0.5f) ? 1 : Synth::MAX_VOICES;
 
-    synth.outputLevelSmoother.setTargetValue (juce::Decibels::decibelsToGain(parameterValue(Params::outputLevel)));
+    synth.outputLevelSmoother.setTargetValue (juce::Decibels::decibelsToGain (parameterValue (Params::outputLevel)));
 
     float octave = parameterValue (Params::octave);
     float tuning = parameterValue (Params::tuning);

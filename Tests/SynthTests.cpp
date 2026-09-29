@@ -54,7 +54,7 @@ public:
             synth.numVoices = 1;
             synth.oscMix = 0.0f;
             synth.detune = 1.0f;
-            (void) synth.takeGuardFlags(); // clear diagnostics
+            (void)synth.takeGuardFlags(); // clear diagnostics
 
             std::fill (left, left + n, 0.0f);
             std::fill (right, right + n, 0.0f);
@@ -184,11 +184,11 @@ public:
             synth.midiMessage (0x90, 60, 80);
             synth.midiMessage (0x90, 64, 80);
             synth.render (outputs, n);
-            expect (! isSilent (left, n));
+            expect (!isSilent (left, n));
 
             synth.midiMessage (0x80, 60, 0); // release first note only
             synth.render (outputs, n);
-            expect (! isSilent (left, n)); // second note still plays
+            expect (!isSilent (left, n)); // second note still plays
         }
 
         beginTest ("voice stealing - more notes than voices stays finite");
@@ -196,8 +196,8 @@ public:
             fresh();
             synth.numVoices = Synth::MAX_VOICES;
             for (int i = 0; i <= Synth::MAX_VOICES; ++i) // MAX_VOICES + 1 notes forces one voice to be stolen
-                synth.midiMessage (0x90, (uint8_t) (60 + i), 80);
-            
+                synth.midiMessage (0x90, (uint8_t)(60 + i), 80);
+
             synth.render (outputs, n);
 
             // Clamping acceptable for big chord, NaN/inf is not
@@ -213,9 +213,9 @@ public:
             synth.render (outputs, n);
 
             synth.midiMessage (0xB0, 64, 127); // pedal pressed
-            synth.midiMessage (0x80, 60, 0); // key released
+            synth.midiMessage (0x80, 60, 0);   // key released
             synth.render (outputs, n);
-            expect (! isSilent (left, n)); // key is supposed to still sound because of the pedal
+            expect (!isSilent (left, n)); // key is supposed to still sound because of the pedal
 
             synth.midiMessage (0xB0, 64, 0); // pedal released
             expect (renderUntilSilent (10)); // now key fades out sine pedal is released
@@ -230,7 +230,7 @@ public:
             synth.render (outputs, n);
 
             synth.midiMessage (0xB0, 120, 0); // panic - all notes off
-            synth.render(outputs, n);
+            synth.render (outputs, n);
             expect (isSilent (left, n));
         }
 
@@ -246,11 +246,9 @@ public:
             synth.midiMessage (0x80, 64, 0); // release second note
             synth.render (outputs, n);
 
-            expect(! isSilent (left, n)); // first note rings
+            expect (!isSilent (left, n)); // first note rings
         }
-
     }
-
 };
 
 static SynthTests synthTests;
