@@ -24,9 +24,6 @@ picking each one up.
 
 ## Plugin / DSP
 
-- [ ] **AU program warning** — pluginval reports `Current program is -1` and a
-      `juce_AudioProcessor.cpp:915` assertion in the editor test. Cosmetic for
-      now; revisit when presets/program state are implemented.
 - [ ] **Presets / program state** — `getNumPrograms`, `getCurrentProgram`,
       `getStateInformation` / `setStateInformation` with real data.
 - [ ] **Parameter automation tests** — once the synth exposes parameters.

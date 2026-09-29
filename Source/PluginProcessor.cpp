@@ -71,6 +71,7 @@ void JX11AudioProcessor::releaseResources()
 void JX11AudioProcessor::reset()
 {
     synth.reset();
+    synth.outputLevelSmoother.setCurrentAndTargetValue(juce::Decibels::decibelsToGain(parameterValue(Params::outputLevel)));
 }
 
 //==============================================================================
@@ -190,6 +191,10 @@ void JX11AudioProcessor::update()
     float sampleRate = static_cast<float> (getSampleRate());
     float inverseSampleRate = 1.0f / sampleRate;
 
+    synth.numVoices = (parameterValue (Params::polyMode) < 0.5f) ? 1 : Synth::MAX_VOICES;
+
+    synth.outputLevelSmoother.setTargetValue (juce::Decibels::decibelsToGain(parameterValue(Params::outputLevel)));
+
     float octave = parameterValue (Params::octave);
     float tuning = parameterValue (Params::tuning);
 
@@ -215,6 +220,8 @@ void JX11AudioProcessor::update()
     synth.noiseMix = noiseMix * 0.06f;
 
     synth.oscMix = parameterValue (Params::oscMix) / 100.0f;
+
+    synth.volumeTrim = 0.0008f * (3.2f - synth.oscMix - 25.0f * synth.noiseMix) * 1.5f;
 
     float semi = parameterValue (Params::oscTune);
     float cent = parameterValue (Params::oscFine);

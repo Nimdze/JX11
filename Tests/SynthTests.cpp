@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <juce_core/juce_core.h>
-#include "Synth.h"
 #include <algorithm>
+#include "Synth.h"
+#include "Utils.h"
 
 namespace
 {
@@ -32,11 +33,14 @@ public:
 
         Synth synth;
         const float sampleRate = 44100.0f;
+
+        synth.allocateResources (sampleRate, n);
+
+        // set parameters for a bare synth that doesnt have update() called
         synth.tune = sampleRate * std::exp (0.05776226505f * -36.3763f); // octave 0, tuning 0
         synth.detune = 1.0f;
         synth.oscMix = 0.0f;
-
-        synth.allocateResources (sampleRate, n);
+        synth.volumeTrim = 0.00384f;
 
         synth.envAttack = 0.75f; // fast
         synth.envDecay = 0.75f;
@@ -47,6 +51,11 @@ public:
         auto fresh = [&]
         {
             synth.reset();
+            synth.numVoices = 1;
+            synth.oscMix = 0.0f;
+            synth.detune = 1.0f;
+            (void) synth.takeGuardFlags(); // clear diagnostics
+
             std::fill (left, left + n, 0.0f);
             std::fill (right, right + n, 0.0f);
         };
@@ -63,6 +72,10 @@ public:
             }
             return false;
         };
+
+        //=============================================================
+        // Basic MIDI Testing
+        //=============================================================
 
         beginTest ("silent before any note");
         fresh();
@@ -107,12 +120,16 @@ public:
             fresh();
             synth.detune = 1.0f;
             synth.tune = sampleRate * std::exp (0.05776226505f * -36.3763f);
-            const float p69 = synth.calcPeriod (69);
+            const float p69 = synth.calcPeriod (0, 69);
 
             expectWithinAbsoluteError (p69, sampleRate / 440.0f, 0.5f);
-            expectWithinAbsoluteError (synth.calcPeriod (81), p69 * 0.5f, 0.5f); // +12 semitones
-            expectWithinAbsoluteError (synth.calcPeriod (57), p69 * 2.0f, 1.0f); // -12 semitones
+            expectWithinAbsoluteError (synth.calcPeriod (0, 81), p69 * 0.5f, 0.5f); // +12 semitones
+            expectWithinAbsoluteError (synth.calcPeriod (0, 57), p69 * 2.0f, 1.0f); // -12 semitones
         }
+
+        //=============================================================
+        // Tuning, detuning, pitch bend
+        //=============================================================
 
         beginTest ("pitch bend maps centre, max up, max down");
         {
@@ -154,7 +171,86 @@ public:
             synth.render (outputs, n);
             expect (!isSilent (left, n));
         }
+
+        //=============================================================
+        // Voice managment - polyphony, voice stealing, sustain pedal, mono legato
+        //=============================================================
+
+        beginTest ("polyphony - two notes sound and are independent");
+        {
+            fresh();
+            synth.numVoices = Synth::MAX_VOICES;
+
+            synth.midiMessage (0x90, 60, 80);
+            synth.midiMessage (0x90, 64, 80);
+            synth.render (outputs, n);
+            expect (! isSilent (left, n));
+
+            synth.midiMessage (0x80, 60, 0); // release first note only
+            synth.render (outputs, n);
+            expect (! isSilent (left, n)); // second note still plays
+        }
+
+        beginTest ("voice stealing - more notes than voices stays finite");
+        {
+            fresh();
+            synth.numVoices = Synth::MAX_VOICES;
+            for (int i = 0; i <= Synth::MAX_VOICES; ++i) // MAX_VOICES + 1 notes forces one voice to be stolen
+                synth.midiMessage (0x90, (uint8_t) (60 + i), 80);
+            
+            synth.render (outputs, n);
+
+            // Clamping acceptable for big chord, NaN/inf is not
+            const unsigned flags = synth.takeGuardFlags();
+            expect ((flags & SampleGuardNaN) == 0);
+            expect ((flags & SampleGuardInf) == 0);
+        }
+
+        beginTest ("sustain pedal holds a released note until lifted");
+        {
+            fresh();
+            synth.midiMessage (0x90, 60, 80);
+            synth.render (outputs, n);
+
+            synth.midiMessage (0xB0, 64, 127); // pedal pressed
+            synth.midiMessage (0x80, 60, 0); // key released
+            synth.render (outputs, n);
+            expect (! isSilent (left, n)); // key is supposed to still sound because of the pedal
+
+            synth.midiMessage (0xB0, 64, 0); // pedal released
+            expect (renderUntilSilent (10)); // now key fades out sine pedal is released
+        }
+
+        beginTest ("all notes off silence the synth");
+        {
+            fresh();
+            synth.numVoices = Synth::MAX_VOICES;
+            synth.midiMessage (0x90, 60, 80);
+            synth.midiMessage (0x90, 64, 80);
+            synth.render (outputs, n);
+
+            synth.midiMessage (0xB0, 120, 0); // panic - all notes off
+            synth.render(outputs, n);
+            expect (isSilent (left, n));
+        }
+
+        beginTest ("mono legato falls back to the previously held note");
+        {
+            fresh();
+            synth.midiMessage (0x90, 60, 80); // 1st note
+            synth.render (outputs, n);
+
+            synth.midiMessage (0x90, 64, 80); // 2nd note - legato
+            synth.render (outputs, n);
+
+            synth.midiMessage (0x80, 64, 0); // release second note
+            synth.render (outputs, n);
+
+            expect(! isSilent (left, n)); // first note rings
+        }
+
     }
+
 };
 
 static SynthTests synthTests;

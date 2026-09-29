@@ -52,7 +52,7 @@ struct Voice
     void updatePanning()
     {
         // setting panning according to midi note number, set for 49 keys
-        float panning = std::clamp ((note - 60.0f) / 24.0f, -1.0f, 1.0f);
+        float panning = std::clamp ((static_cast<float>(note) - 60.0f) / 24.0f, -1.0f, 1.0f);
         panLeft = std::sin ((PI / 4) * (1.0f - panning));
         panRight = std::sin ((PI / 4) * (1.0f + panning));
     }

@@ -4,6 +4,7 @@
 #pragma once
 
 #include <juce_core/juce_core.h>
+#include <juce_audio_basics/juce_audio_basics.h>  
 #include <atomic>
 #include "Voice.h"
 #include "NoiseGenerator.h"
@@ -12,6 +13,12 @@ class Synth
 {
 public:
     // Synth properties
+    static constexpr int MAX_VOICES = 8;
+    int numVoices = 1;
+
+    float volumeTrim = 1.0f;
+    juce::LinearSmoothedValue<float> outputLevelSmoother = 1.0f;
+
     float noiseMix = 0.0f;
     float oscMix = 0.0f;
 
@@ -39,17 +46,26 @@ public:
     // Guarding against ivalid samples
     unsigned takeGuardFlags() noexcept { return guardFlags.exchange (0, std::memory_order_relaxed); }
 
-    float calcPeriod (int note) const;
+    float calcPeriod (int v, int note) const;
 
 private:
     // Synth Properties
     float sampleRate;
-    Voice voice;
+    bool sustainPedalPressed;
+    Voice voices[MAX_VOICES];
+
+    void restartMonoVoice(int note, int velocity); // Make mono legato not retrigger the envelope
+    void shiftQueuedNotes(); // Mono legato note managment upon key release
+    int nextQueuedNote(); // Mono legato note managment upon key release
+
     NoiseGenerator noiseGen;
 
-    // MIDI handeling
+    // Voices and MIDI handeling
+    void startVoice(int v, int note, int velocity);
+    int findFreeVoice() const;
     void noteOn (int note, int velocity);
     void noteOff (int note);
+    void controlChange(uint8_t data1, uint8_t data2);
 
     // Catching invalid sample type
     std::atomic<unsigned> guardFlags{0};
