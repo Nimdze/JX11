@@ -34,6 +34,8 @@ target_sources(JX11 PRIVATE
     SinOscillator.h
 
     Envelope.h
+    LFO.h
+    Modulation.h
     
 )
 

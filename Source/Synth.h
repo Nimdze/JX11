@@ -8,6 +8,7 @@
 #include <atomic>
 #include "Voice.h"
 #include "NoiseGenerator.h"
+#include "LFO.h"
 
 class Synth
 {
@@ -26,10 +27,23 @@ public:
     float tune = 0.0f;
     float pitchBend = 1.0f;
 
+    float velocitySensitivity = 1.0f;
+    bool ignoreVelocity = false;
+
     float envAttack = 0.0f;
     float envDecay = 0.0f;
     float envSustain = 1.0f;
     float envRelease = 0.0f;
+
+    float lfoInc = 0.0f;
+    float vibrato = 0.0f;
+
+    float pwmDepth = 0.0f;
+    float modWheel = 0.0f;
+
+    int glideMode = 0;
+    float glideRate = 1.0f;
+    float glideBend = 1.0f;
 
     // Basic operations
     Synth();
@@ -51,8 +65,11 @@ public:
 private:
     // Synth Properties
     float sampleRate;
-    bool sustainPedalPressed;
     Voice voices[MAX_VOICES];
+    int lastNote;
+    bool sustainPedalPressed;
+
+    LFO lfo;
 
     void restartMonoVoice (int note, int velocity); // Make mono legato not retrigger the envelope
     void shiftQueuedNotes();                        // Mono legato note managment upon key release
@@ -66,6 +83,15 @@ private:
     void noteOn (int note, int velocity);
     void noteOff (int note);
     void controlChange (uint8_t data1, uint8_t data2);
+
+    void updateLFO();
+    inline void updatePeriod (Voice& voice)
+    {
+        voice.osc1.period = voice.period * pitchBend;
+        voice.osc2.period = voice.osc1.period * detune;
+    }
+
+    bool isPlayingLegatoStyle() const;
 
     // Catching invalid sample type
     std::atomic<unsigned> guardFlags{0};

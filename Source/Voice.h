@@ -15,6 +15,8 @@ struct Voice
     Oscillator osc2;
 
     float period;
+    float target;
+    float glideRate;
 
     float panLeft, panRight;
 
@@ -56,4 +58,6 @@ struct Voice
         panLeft = std::sin ((PI / 4) * (1.0f - panning));
         panRight = std::sin ((PI / 4) * (1.0f + panning));
     }
+
+    void updateLFO() { period += glideRate * (target - period); }
 };

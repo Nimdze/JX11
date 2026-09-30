@@ -14,6 +14,8 @@ target_sources(JX11Tests PRIVATE
     SinOscillatorTests.cpp
 
     EnvelopeTests.cpp
+    LFOTests.cpp
+    ModulationTests.cpp
 
     ${CMAKE_SOURCE_DIR}/Source/Synth.cpp
     ${CMAKE_SOURCE_DIR}/Source/Preset.cpp

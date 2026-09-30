@@ -19,6 +19,7 @@
 #include "PluginProcessor.h"
 #include "Parameters.h"
 #include "Utils.h"
+#include "Modulation.h"
 
 //==============================================================================
 
@@ -165,6 +166,14 @@ void JX11AudioProcessor::splitBufferByEvents (juce::AudioBuffer<float>& buffer, 
 
 void JX11AudioProcessor::handleMIDI (uint8_t data0, uint8_t data1, uint8_t data2)
 {
+    if ((data0 & 0xF0) == 0xB0)
+    {
+        if (data1 == 0x07) // volume
+        {
+            pendingOutputLevel.store (static_cast<float> (data2) / 127.0f, std::memory_order_relaxed);
+        }
+    }
+
     if ((data0 & 0xF0) == 0xC0)
     {
         pendingProgram.store (static_cast<int> (data1), std::memory_order_release);
@@ -196,6 +205,14 @@ void JX11AudioProcessor::update()
 
     synth.outputLevelSmoother.setTargetValue (juce::Decibels::decibelsToGain (parameterValue (Params::outputLevel)));
 
+    float noiseMix = parameterValue (Params::noise) / 100.0f;
+    noiseMix *= noiseMix;
+    synth.noiseMix = noiseMix * 0.06f;
+
+    synth.oscMix = parameterValue (Params::oscMix) / 100.0f;
+
+    synth.volumeTrim = 0.0008f * (3.2f - synth.oscMix - 25.0f * synth.noiseMix) * 1.5f;
+
     float octave = parameterValue (Params::octave);
     float tuning = parameterValue (Params::tuning);
 
@@ -204,6 +221,14 @@ void JX11AudioProcessor::update()
     // tuneInSemi = -36.3763
     float tuneInSemi = -36.3763f - 12.0f * octave - tuning / 100.0f; // subtracting bcause higher -> period smaller
     synth.tune = sampleRate * std::exp (0.05776226505f * tuneInSemi);
+
+    float semi = parameterValue (Params::oscTune);
+    float cent = parameterValue (Params::oscFine);
+    synth.detune = std::pow (
+        1.059463094359f,
+        -semi -
+            0.01f *
+                cent); // multiplying period by 2^(-1/12) increases pitch in 1 semitone, 2^(-N/12) = 1.059463094359^(-N)
 
     synth.envAttack = std::exp (-inverseSampleRate * std::exp (5.5f - 0.075f * parameterValue (Params::envAttack)));
     synth.envDecay = std::exp (-inverseSampleRate * std::exp (5.5f - 0.075f * parameterValue (Params::envDecay)));
@@ -216,21 +241,43 @@ void JX11AudioProcessor::update()
     else
         synth.envRelease = std::exp (-inverseSampleRate * std::exp (5.5f - 0.075f * envRelease));
 
-    float noiseMix = parameterValue (Params::noise) / 100.0f;
-    noiseMix *= noiseMix;
-    synth.noiseMix = noiseMix * 0.06f;
+    float filterVelocity = parameterValue (Params::filterVelocity);
+    if (filterVelocity < -90.0f)
+    {
+        synth.velocitySensitivity = 0.0f;
+        synth.ignoreVelocity = true;
+    }
+    else
+    {
+        synth.velocitySensitivity = 0.0005f * filterVelocity;
+        synth.ignoreVelocity = false;
+    }
 
-    synth.oscMix = parameterValue (Params::oscMix) / 100.0f;
+    const float inverseUpdateRate = inverseSampleRate * LFO::MAX_STEPS;
+    float lfoRate = lfoRateHz (parameterValue (Params::lfoRate)); // skew
+    synth.lfoInc = lfoRate * inverseUpdateRate * float (2 * PI);
 
-    synth.volumeTrim = 0.0008f * (3.2f - synth.oscMix - 25.0f * synth.noiseMix) * 1.5f;
+    float vibrato = parameterValue (Params::vibrato) / 200.0f;
+    synth.vibrato = vibratoDepth (parameterValue (Params::vibrato));
 
-    float semi = parameterValue (Params::oscTune);
-    float cent = parameterValue (Params::oscFine);
-    synth.detune = std::pow (
-        1.059463094359f,
-        -semi -
-            0.01f *
-                cent); // multiplying period by 2^(-1/12) increases pitch in 1 semitone, 2^(-N/12) = 1.059463094359^(-N)
+    synth.pwmDepth = synth.vibrato;
+    if (vibrato < 0.0f)
+    {
+        synth.vibrato = 0.0f;
+    }
+
+    synth.glideMode = parameterValue (Params::glideMode);
+    float glideRate = parameterValue (Params::glideRate);
+    if (glideRate < 2.0f)
+    {
+        synth.glideRate = 1.0f; // no glide
+    }
+    else
+    {
+        synth.glideRate = glideCoefficient (glideRate, inverseUpdateRate);
+    }
+
+    synth.glideBend = parameterValue (Params::glideBend);
 }
 
 //==============================================================================
@@ -240,6 +287,16 @@ void JX11AudioProcessor::timerCallback()
     const int requested = pendingProgram.exchange (-1, std::memory_order_acquire);
     if (requested >= 0)
         setCurrentProgram (requested);
+
+    if (const float level = pendingOutputLevel.exchange (-1.0f, std::memory_order_relaxed); level >= 0.0f)
+    {
+        if (auto* p = apvts.getParameter (Params::kSpecs[Params::outputLevel].id))
+        {
+            p->beginChangeGesture();
+            p->setValueNotifyingHost (level);
+            p->endChangeGesture();
+        }
+    }
 
     const unsigned flags = synth.takeGuardFlags();
 

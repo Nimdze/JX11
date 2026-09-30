@@ -102,6 +102,7 @@ private:
     std::atomic<bool> parametersChanged{false};
     std::atomic<int> pendingProgram{-1};
     std::atomic<bool> resetRequested{false};
+    std::atomic<float> pendingOutputLevel{-1.0f};
 
     void valueTreePropertyChanged (juce::ValueTree&, const juce::Identifier&) override
     {

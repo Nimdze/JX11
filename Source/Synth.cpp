@@ -4,6 +4,7 @@
 #include "Synth.h"
 #include "Voice.h"
 #include "Utils.h"
+#include "Modulation.h"
 
 static const float ANALOG = 0.002f;
 static const int SUSTAIN = -2;
@@ -33,6 +34,11 @@ void Synth::reset()
     sustainPedalPressed = false;
 
     outputLevelSmoother.reset (sampleRate, 0.05);
+
+    modWheel = 0.0f;
+    lastNote = 0;
+
+    lfo.reset();
 }
 
 // =============================
@@ -48,13 +54,15 @@ void Synth::render (float** outputBuffers, int sampleCount)
         Voice& voice = voices[v];
         if (voice.env.isActive())
         {
-            voice.osc1.period = voice.period * pitchBend;
-            voice.osc2.period = voice.osc1.period * detune;
+            updatePeriod (voice);
+            voice.glideRate = glideRate;
         }
     }
 
     for (int sample = 0; sample < sampleCount; ++sample)
     {
+        updateLFO();
+
         const float noise = noiseGen.nextValue() * noiseMix;
 
         float outputLeft = 0.0f;
@@ -142,20 +150,43 @@ void Synth::midiMessage (uint8_t data0, uint8_t data1, uint8_t data2)
     }
 }
 
-void Synth::startVoice (int v, int note, int velocity)
+void Synth::startVoice (int v, int note, int rawVelocity)
 {
     float period = calcPeriod (v, note);
 
     Voice& voice = voices[v];
-    voice.period = period;
+    voice.target = period;
+
+    int noteDistance = 0;
+    if (lastNote > 0)
+    {
+        if ((glideMode == 2) || ((glideMode == 1) && isPlayingLegatoStyle()))
+            noteDistance = note - lastNote;
+    }
+
+    voice.period = period * std::pow (1.059463094359f, float (noteDistance) - glideBend);
+
+    if (voice.period < 6.0f)
+    {
+        voice.period = 6.0f;
+    }
+
+    lastNote = note;
+
     voice.note = note;
     voice.updatePanning();
 
+    float velocity = velocityCurve (rawVelocity);
     voice.osc1.amplitude = volumeTrim * static_cast<float> (velocity);
     // voice.osc1.reset();
 
     voice.osc2.amplitude = voice.osc1.amplitude * oscMix;
     // voice.osc2.reset();
+
+    if (vibrato == 0.0f && pwmDepth > 0.0f)
+    {
+        voice.osc2.squareWave (voice.osc1, voice.period);
+    }
 
     Envelope& env = voice.env;
     env.attackMultiplier = envAttack;
@@ -187,7 +218,12 @@ void Synth::restartMonoVoice (int note, int velocity)
     float period = calcPeriod (0, note);
 
     Voice& voice = voices[0];
-    voice.period = period;
+    voice.target = period;
+
+    if (glideMode == 0)
+    {
+        voice.period = period;
+    }
 
     voice.env.level += SILENCE + SILENCE;
     voice.note = note;
@@ -222,6 +258,11 @@ int Synth::nextQueuedNote()
 
 void Synth::noteOn (int note, int velocity)
 {
+    if (ignoreVelocity)
+    {
+        velocity = 80;
+    }
+
     int v = 0; // 0 for mono
 
     if (numVoices == 1) // mono
@@ -279,6 +320,10 @@ void Synth::controlChange (uint8_t data1, uint8_t data2)
 
             break;
 
+        case 0x01:
+            modWheel = modWheelDepth (data2);
+            break;
+
         default: // panic, all notes off - 120 or above
             if (data1 >= 0X78)
             {
@@ -308,4 +353,44 @@ float Synth::calcPeriod (int v, int note) const
     }
 
     return period;
+}
+
+// =============================
+// Modulation
+// =============================
+
+void Synth::updateLFO()
+{
+    if (!lfo.advance (lfoInc))
+        return;
+
+    const float sine = lfo.current();
+
+    float vibratoMod = 1.0f + sine * (modWheel + vibrato);
+    float pwm = 1.0f + sine * (modWheel + pwmDepth);
+
+    for (int v = 0; v < MAX_VOICES; ++v)
+    {
+        Voice& voice = voices[v];
+        if (voice.env.isActive())
+        {
+            voice.osc1.modulation = vibratoMod;
+            voice.osc2.modulation = pwm;
+            // if vibrato is non-negative both values will be the same and both oscillators will have vibrato,
+            // if vibrato is negative then vibratoMod is 0 and only the osc2 get modulated (resulting in pwm)
+
+            voice.updateLFO();
+            updatePeriod (voice);
+        }
+    }
+}
+
+bool Synth::isPlayingLegatoStyle() const
+{
+    int held = 0;
+    for (int i = 0; i < MAX_VOICES; ++i)
+        if (voices[i].note > 0)
+            held += 1;
+
+    return held > 0;
 }
