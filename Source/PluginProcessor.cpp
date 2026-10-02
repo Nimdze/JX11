@@ -197,102 +197,33 @@ void JX11AudioProcessor::render (juce::AudioBuffer<float>& buffer, int sampleCou
 
 void JX11AudioProcessor::update()
 {
+    UpdateContext ctx { static_cast<float> (getSampleRate()), 0.0f, 0.0f };                        
+    ctx.inverseSampleRate = 1.0f / ctx.sampleRate;                                                 
+    ctx.inverseUpdateRate = ctx.inverseSampleRate * LFO::MAX_STEPS;                                
+                                                                                                      
+    for (int i = 0; i < Params::NumParams; ++i)                                                    
+        if (auto fn = Params::kSpecs[i].apply)                                                     
+            fn (synth.params, parameterValue (i), ctx);                                            
+                                                                                                      
+    finalizeParams (synth.params, ctx);                                                            
+                                                                                                      
+    synth.outputLevelSmoother.setTargetValue (juce::Decibels::decibelsToGain (parameterValue (Params::outputLevel))); 
+}
 
-    float sampleRate = static_cast<float> (getSampleRate());
-    float inverseSampleRate = 1.0f / sampleRate;
-
-    synth.params.numVoices = (parameterValue (Params::polyMode) < 0.5f) ? 1 : Synth::MAX_VOICES;
-
-    synth.outputLevelSmoother.setTargetValue (juce::Decibels::decibelsToGain (parameterValue (Params::outputLevel)));
-
-    float noiseMix = parameterValue (Params::noise) / 100.0f;
-    noiseMix *= noiseMix;
-    synth.params.noiseMix = noiseMix * 0.06f;
-
-    synth.params.oscMix = parameterValue (Params::oscMix) / 100.0f;
-
-    float filterReso = parameterValue (Params::filterReso) / 100.f;
-
-    synth.params.filterQ = std::exp (3.0f * filterReso);
-
-    synth.params.volumeTrim = 0.0008f * (3.2f - synth.params.oscMix - 25.0f * synth.params.noiseMix) * (1.5f - 0.5f * filterReso);
-
-    float octave = parameterValue (Params::octave);
-    float tuning = parameterValue (Params::tuning);
-
-    // define tuneInSemi = (sampleRate/(440 * 2^(-69/12))) = sampleRate/8.1758
-    // 8.1758Hz is the reference freq for MIDI note number 0 so we want exp(0.05776226505f * tuneInSemi) = 1/8.175 -->
-    // tuneInSemi = -36.3763
-    float tuneInSemi = -36.3763f - 12.0f * octave - tuning / 100.0f; // subtracting bcause higher -> period smaller
-    synth.params.tune = sampleRate * std::exp (0.05776226505f * tuneInSemi);
-
-    float semi = parameterValue (Params::oscTune);
-    float cent = parameterValue (Params::oscFine);
-    synth.params.detune = std::pow (
-        1.059463094359f,
-        -semi -
-            0.01f *
-                cent); // multiplying period by 2^(-1/12) increases pitch in 1 semitone, 2^(-N/12) = 1.059463094359^(-N)
-
-    synth.params.envAttack = std::exp (-inverseSampleRate * std::exp (5.5f - 0.075f * parameterValue (Params::envAttack)));
-    synth.params.envDecay = std::exp (-inverseSampleRate * std::exp (5.5f - 0.075f * parameterValue (Params::envDecay)));
-
-    synth.params.envSustain = parameterValue (Params::envSustain) / 100.0f;
-
-    float envRelease = parameterValue (Params::envRelease);
-    if (envRelease < 1.0f)
-        synth.params.envRelease = 0.75f; // fast release, still avoids clicks and pops
-    else
-        synth.params.envRelease = std::exp (-inverseSampleRate * std::exp (5.5f - 0.075f * envRelease));
-
-    float filterVelocity = parameterValue (Params::filterVelocity);
-    if (filterVelocity < -90.0f)
-    {
-        synth.params.velocitySensitivity = 0.0f;
-        synth.params.ignoreVelocity = true;
-    }
-    else
-    {
-        synth.params.velocitySensitivity = 0.0005f * filterVelocity;
-        synth.params.ignoreVelocity = false;
-    }
-
-    const float inverseUpdateRate = inverseSampleRate * LFO::MAX_STEPS;
-    float lfoRate = lfoRateHz (parameterValue (Params::lfoRate)); // skew
-    synth.params.lfoInc = lfoRate * inverseUpdateRate * float (2 * PI);
-
-    float vibrato = parameterValue (Params::vibrato) / 200.0f;
-    synth.params.vibrato = vibratoDepth (parameterValue (Params::vibrato));
-
-    synth.params.pwmDepth = synth.params.vibrato;
-    if (vibrato < 0.0f)
-    {
-        synth.params.vibrato = 0.0f;
-    }
-
-    synth.params.glideMode = parameterValue (Params::glideMode);
-    float glideRate = parameterValue (Params::glideRate);
-    if (glideRate < 2.0f)
-    {
-        synth.params.glideRate = 1.0f; // no glide
-    }
-    else
-    {
-        synth.params.glideRate = glideCoefficient (glideRate, inverseUpdateRate);
-    }
-
-    synth.params.glideBend = parameterValue (Params::glideBend);
-
-    synth.params.filterKeyTracking = 0.08f * parameterValue (Params::filterFreq) - 1.5f; // converts 0-100 to -1.5-6.5
-    float filterLFO = parameterValue(Params::filterLFO) / 100.0f;
-    synth.params.filterLFODepth = 2.5f * filterLFO * filterLFO;
-
-    synth.params.filterAttack = std::exp(-inverseUpdateRate * std::exp(5.5f - 0.075 * parameterValue(Params::filterAttack)));
-    synth.params.filterDecay = std::exp(-inverseUpdateRate * std::exp(5.5f - 0.075 * parameterValue(Params::filterDecay)));
-    float filterSustain = parameterValue(Params::filterSustain) / 100.0f;
-    synth.params.filterSustain = filterSustain * filterSustain;
-    synth.params.filterRelease = std::exp(-inverseUpdateRate * std::exp(5.5f - 0.075 * parameterValue(Params::filterRelease)));
-    synth.params.filterEnvDepth = 0.06f * parameterValue(Params::filterEnv);
+void JX11AudioProcessor::finalizeParams (SynthParams& p, const UpdateContext& ctx) const           
+{                                                                                                  
+    // oscMix + noise + filterReso -> volumeTrim                                                   
+    const float filterReso = parameterValue (Params::filterReso) / 100.0f;                         
+    p.volumeTrim = 0.0008f * (3.2f - p.oscMix - 25.0f * p.noiseMix) * (1.5f - 0.5f * filterReso);  
+                                                                                                      
+    // octave + tuning -> tune                                                                     
+    const float tuneInSemi = -36.3763f - 12.0f * parameterValue (Params::octave) - parameterValue (Params::tuning) / 100.0f;
+    p.tune = ctx.sampleRate * std::exp (0.05776226505f * tuneInSemi);                              
+                                                                                                      
+    // oscTune + oscFine -> detune                                                                 
+    const float semi = parameterValue (Params::oscTune);                                           
+    const float cent = parameterValue (Params::oscFine);                                           
+    p.detune = std::pow (1.059463094359f, -semi - 0.01f * cent);                                   
 }
 
 //==============================================================================

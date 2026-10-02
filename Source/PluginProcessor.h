@@ -81,6 +81,8 @@ private:
 
     void update();
 
+    void finalizeParams (SynthParams&, const UpdateContext&) const;
+
     //==============================================================================
     // Presets - message thread
     //==============================================================================
