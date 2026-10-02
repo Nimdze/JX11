@@ -369,15 +369,19 @@ _State: 101 test cases, green in Debug; `JX11_All` builds. `Oscillator` and
 `NoiseGenerator` remain untested by decision (T-2/T-3)._
 
 ### Phase 2 — Structure, docs, build  *(goal 1)*
-- [ ] Extract `JX11_core` library; link plugin + tests against it (O-4).
-- [ ] Add `ARCHITECTURE.md`, `CHANGELOG.md`, `.editorconfig`, `docs/` (O-5/O-7).
-- [ ] Generalise/remove machine-specific `.vscode` config.
-- [ ] Name the magic-number constants (O-9); `clang-format` pass (O-8).
-- [ ] Add a CI step that greps for missing SPDX headers.
+- [x] Extract `JX11_engine` library; link plugin + tests against it (O-4).
+- [x] Add `ARCHITECTURE.md`, `CHANGELOG.md`, `.editorconfig` (O-5/O-7).
+      (`docs/` with a screenshot/audio demo still pending real assets.)
+- [x] Generalise the machine-specific `.vscode` config.
+- [x] Name the magic-number constants (O-9); `clang-format` pass (O-8).
+- [x] ~~CI step grepping for missing SPDX headers~~ — dropped (SPDX out of scope).
 
 **Done when:** adding a parameter touches only `ParameterList.h` + `Parameters.h`
 + presets; tests and plugin share one core target; docs describe the real
 architecture.
+
+_State: `JX11_engine` is the single compiled engine; plugin and tests link it.
+`ARCHITECTURE.md` documents the signal flow, thread model, and data flow._
 
 ### Phase 3 — Modern audio standards  *(goal 2)*
 - [ ] Initialize all DSP state (A-1).
