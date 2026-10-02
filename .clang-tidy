@@ -1,8 +1,7 @@
-# Curated clang-tidy configuration for JX11.5.
+# Curated clang-tidy configuration.
 #
-# See MODERNIZATION.md (Phase 4). This is intentionally narrower than "*":
-# the goal is to catch real defects, not to relitigate style. Style is handled
-# by .clang-format.
+# This is intentionally narrower than "*": the goal is to catch real defects,
+# not to relitigate style. Style is handled by .clang-format.
 #
 # Run, e.g.:
 #   clang-tidy -p build-vscode --warnings-as-errors='bugprone-*,performance-*' \

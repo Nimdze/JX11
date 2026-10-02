@@ -1,6 +1,3 @@
-// Copyright (C) 2026 Nimdze
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 #pragma once
 
 // Runtime MIDI controller state, mutated on the audio thread by incoming MIDI.

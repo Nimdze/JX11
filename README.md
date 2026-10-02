@@ -3,51 +3,33 @@
 [![CI](https://github.com/Nimdze/JX11/actions/workflows/ci.yml/badge.svg)](https://github.com/Nimdze/JX11/actions/workflows/ci.yml)
 
 A subtractive synthesizer plug-in (Standalone / AU / VST3) written in C++17 with
-JUCE. JX11.5 is a **modernization** of the JX11 synth from
-*Creating Synthesizer Plug-Ins with C++ and JUCE* by Matthijs Hollemans: the same
-synthesizer engine, reorganized and hardened into a production-shaped codebase
-with a real test suite, CI, and documentation.
+JUCE.
 
-The original JX11 was written as a teaching project — a single flat source tree
-with no tests. JX11.5 keeps the audio behaviour recognizably the same and rebuilds
-everything around it: architecture, real-time discipline, tests, and docs.
+This is a personal learning project. It started from the JX11 synth built in
+*Creating Synthesizer Plug-Ins with C++ and JUCE* by Matthijs Hollemans, and I
+reorganized and extended it: a layered engine, a real test suite, sanitizer and
+plug-in validation in CI, and a custom UI.
 
-## What JX11.5 adds over the book's JX11
+## What's different from the book's JX11
 
-- **Layered engine.** `common/` → `model/` → `dsp/` → `plugin/`, with the engine
-  extracted into a `JX11_engine` static library that the shipping plug-in and the
-  test binary both link. The tested DSP is the shipped DSP.
-- **Single source of truth for parameters.** One canonical parameter list drives
-  the APVTS layout, presets, the UI, and the parameter→engine mapping.
-- **Real-time discipline.** No allocation, locks, or JUCE parameter objects on the
-  audio thread; explicit atomics for cross-thread handshakes; one-pole smoothing
-  for continuous parameters; every DSP type initialized.
-- **Fixes over the book's code.** Filter cutoff is clamped below Nyquist (safe at
-  32 kHz/22 kHz/offline rates), the first-note filter-modulation sweep is gone,
-  `getTailLengthSeconds()` reports a realistic tail, and the selected program
-  index survives save/load.
-- **Test suite.** 100+ `juce::UnitTest` cases covering voice allocation (legato,
-  sustain, stealing), every parameter-mapping function, the filter, envelopes,
-  LFO, noise, processor state, and a **golden offline-render regression** that
-  pins the DSP output.
-- **CI.** Debug/Release × arm64/x86_64, AddressSanitizer + UndefinedBehaviorSanitizer,
+- **Layered source tree** — `common/` → `model/` → `dsp/` → `plugin/`, with the
+  engine built as a `JX11_engine` static library shared by the plug-in and the
+  tests, so the tested DSP is the shipped DSP.
+- **Single source of truth for parameters** — one canonical list drives the APVTS
+  layout, presets, the UI, and the parameter→engine mapping.
+- **Audio-thread discipline** — no allocation or locks on the audio thread,
+  explicit atomics for cross-thread handshakes, and one-pole smoothing for
+  continuous parameters.
+- **A few fixes over the book's code** — the filter cutoff is clamped below
+  Nyquist, the first-note filter-modulation sweep is gone, the reported tail
+  length is realistic, and the selected program survives save/load.
+- **Tests** — unit tests for voice allocation (legato, sustain, stealing), every
+  parameter mapping, oscillators, the filter, envelopes, LFO, noise and processor
+  state, plus an offline-render regression test.
+- **CI** — Debug/Release × arm64/x86_64, AddressSanitizer + UndefinedBehaviorSanitizer,
   ThreadSanitizer, `pluginval` at strictness 10, and `auval`.
-- **Custom UI.** A parameter grid generated from the parameter table, an
+- **Custom UI** — a parameter grid generated from the parameter table, an
   editor-scoped look-and-feel, and a learnable MIDI resonance CC.
-
-## What this project demonstrates
-
-For a reviewer, the interesting parts are less the synth features than the
-engineering around them:
-
-- Reading and refactoring an existing real-time DSP codebase without changing its
-  sound, then proving it with a golden test.
-- Understanding audio-thread constraints and designing thread handshakes around
-  them (`ARCHITECTURE.md` documents the thread model).
-- Writing tests that can actually fail — including a deliberately regenerated
-  regression fingerprint and a filter-modulation fix validated by reverting it.
-- Setting up modern C++/CMake tooling: FetchContent, a shared engine library,
-  sanitizers, and a matrix CI pipeline.
 
 ## The synthesizer
 
@@ -125,11 +107,8 @@ Run the standalone from:
 
 ## Documentation
 
-- [`ARCHITECTURE.md`](ARCHITECTURE.md) — layers, signal flow, thread model, build targets.
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — layers, signal flow, and thread model.
 - [`Source/README.md`](Source/README.md) — file-by-file thread affinity.
-- [`MODERNIZATION.md`](MODERNIZATION.md) — what JX11.5 changes and why.
-- [`CHANGELOG.md`](CHANGELOG.md) — release history.
-- [`DEFERRED.md`](DEFERRED.md) — intentionally postponed work.
 
 ## Troubleshooting
 
@@ -140,8 +119,12 @@ Run the standalone from:
   moving source files; `compile_commands.json` and `JuceHeader.h` are generated
   at configure/build time.
 
+## Credits
+
+Based on the JX11 synthesizer from *Creating Synthesizer Plug-Ins with C++ and
+JUCE* by Matthijs Hollemans, which in turn is based on Paul Kellett's MDA JX10.
+
 ## License
 
-This project is licensed under the GNU General Public License v3.0 or later
-(SPDX: `GPL-3.0-or-later`), because it is built on JUCE (GPLv3/commercial).
-See [LICENSE](LICENSE) for the full text.
+GPL-3.0-or-later, because it is built on JUCE (GPLv3/commercial). See
+[LICENSE](LICENSE) for the full text.

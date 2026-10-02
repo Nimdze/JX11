@@ -1,6 +1,3 @@
-// Copyright (C) 2026 Nimdze
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 #pragma once
 
 #include <cmath>
@@ -105,6 +102,5 @@ private:
     float dc = 0.0f;
 
     // Band-limited impulse train (BLIT) sawtooth from the book. A BLEP
-    // oscillator would alias less at high pitches; that redesign is
-    // intentionally not part of JX11.5 (see MODERNIZATION.md, D-1).
+    // oscillator would alias less at high pitches but is not implemented here.
 };

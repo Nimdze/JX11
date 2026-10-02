@@ -1,6 +1,3 @@
-// Copyright (C) 2026 Nimdze
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 #pragma once
 
 // All per-block control values written by the processor on the audio thread.
