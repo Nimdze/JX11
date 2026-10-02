@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <juce_core/juce_core.h>
-#include "Utils.h"
+#include "dsp/Utils.h"
 #include <limits>
 
 class UtilsTests : public juce::UnitTest

@@ -15,9 +15,9 @@
 #include <array>
 #include <atomic>
 
-#include "Synth.h"
-#include "Preset.h"
-#include "Parameters.h"
+#include "dsp/Synth.h"
+#include "model/Preset.h"
+#include "model/Parameters.h"
 
 //==============================================================================
 /**

@@ -7,10 +7,10 @@
 #include <memory>
 #include <cmath>
 
-#include "SynthParams.h"
-#include "ParameterList.h"
-#include "Modulation.h"
-#include "Constants.h"
+#include "model/SynthParams.h"
+#include "model/ParameterList.h"
+#include "common/Modulation.h"
+#include "common/Constants.h"
 
 namespace Params
 {

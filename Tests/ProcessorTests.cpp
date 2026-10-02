@@ -1,5 +1,5 @@
 #include <juce_core/juce_core.h>
-#include "PluginProcessor.h"
+#include "plugin/PluginProcessor.h"
 
 class ProcessorTests : public juce::UnitTest
 {

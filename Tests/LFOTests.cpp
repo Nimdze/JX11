@@ -3,7 +3,7 @@
 
 #include <juce_core/juce_core.h>
 #include <algorithm>
-#include "LFO.h"
+#include "dsp/LFO.h"
 
 class LFOTests : public juce::UnitTest
 {

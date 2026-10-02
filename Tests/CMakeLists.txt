@@ -17,9 +17,9 @@ target_sources(JX11Tests PRIVATE
     LFOTests.cpp
     ModulationTests.cpp
 
-    ${CMAKE_SOURCE_DIR}/Source/Synth.cpp
-    ${CMAKE_SOURCE_DIR}/Source/Preset.cpp
-    ${CMAKE_SOURCE_DIR}/Source/PluginProcessor.cpp
+    ${CMAKE_SOURCE_DIR}/Source/dsp/Synth.cpp
+    ${CMAKE_SOURCE_DIR}/Source/model/Preset.cpp
+    ${CMAKE_SOURCE_DIR}/Source/plugin/PluginProcessor.cpp
     )
 
 target_include_directories(JX11Tests PRIVATE ${CMAKE_SOURCE_DIR}/Source)

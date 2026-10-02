@@ -1,8 +1,8 @@
 #include <juce_core/juce_core.h>
 #include <cmath>
 #include <algorithm>
-#include "SinOscillator.h"
-#include "Constants.h"
+#include "dsp/SinOscillator.h"
+#include "common/Constants.h"
 
 namespace
 {

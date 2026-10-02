@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <juce_core/juce_core.h>
-#include "Preset.h"
-#include "Parameters.h"
+#include "model/Preset.h"
+#include "model/Parameters.h"
 
 class PresetTests : public juce::UnitTest
 {

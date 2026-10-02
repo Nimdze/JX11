@@ -3,8 +3,8 @@
 
 #include <juce_core/juce_core.h>
 #include <algorithm>
-#include "Synth.h"
-#include "Utils.h"
+#include "dsp/Synth.h"
+#include "dsp/Utils.h"
 
 namespace
 {

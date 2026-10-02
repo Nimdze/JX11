@@ -16,10 +16,10 @@
   ==============================================================================
 */
 
-#include "PluginProcessor.h"
-#include "Parameters.h"
-#include "Utils.h"
-#include "Modulation.h"
+#include "plugin/PluginProcessor.h"
+#include "model/Parameters.h"
+#include "dsp/Utils.h"
+#include "common/Modulation.h"
 
 //==============================================================================
 

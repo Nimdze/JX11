@@ -6,12 +6,12 @@
 #include <juce_core/juce_core.h>
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <atomic>
-#include "Voice.h"
-#include "NoiseGenerator.h"
-#include "LFO.h"
-#include "SynthParams.h"
-#include "MidiState.h"
-#include "VoiceAllocator.h"
+#include "dsp/Voice.h"
+#include "dsp/NoiseGenerator.h"
+#include "dsp/LFO.h"
+#include "model/SynthParams.h"
+#include "model/MidiState.h"
+#include "dsp/VoiceAllocator.h"
 
 class Synth
 {

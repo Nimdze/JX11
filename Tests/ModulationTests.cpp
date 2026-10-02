@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <juce_core/juce_core.h>
-#include "Synth.h"
-#include "Modulation.h"
+#include "dsp/Synth.h"
+#include "common/Modulation.h"
 
 class ModulationTests : public juce::UnitTest
 {

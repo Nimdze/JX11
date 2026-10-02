@@ -9,8 +9,8 @@
   ==============================================================================
 */
 
-#include "PluginProcessor.h"
-#include "PluginEditor.h"
+#include "plugin/PluginProcessor.h"
+#include "plugin/PluginEditor.h"
 
 //==============================================================================
 JX11AudioProcessorEditor::JX11AudioProcessorEditor (JX11AudioProcessor& p)

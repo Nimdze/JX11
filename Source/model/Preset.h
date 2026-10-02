@@ -6,7 +6,7 @@
 #include <juce_core/juce_core.h>
 #include <initializer_list>
 #include <vector>
-#include "ParameterList.h"
+#include "model/ParameterList.h"
 
 // A single preset override, keyed by the canonical enum index. Any parameter
 // not listed falls back to its default from Params::kSpecs.

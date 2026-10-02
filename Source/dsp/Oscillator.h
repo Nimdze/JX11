@@ -4,7 +4,7 @@
 #pragma once
 
 #include <cmath>
-#include "Constants.h"
+#include "common/Constants.h"
 
 class Oscillator
 {

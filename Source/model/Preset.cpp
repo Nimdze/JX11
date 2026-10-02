@@ -1,5 +1,5 @@
-#include "Preset.h"
-#include "Parameters.h"
+#include "model/Preset.h"
+#include "model/Parameters.h"
 
 Preset::Preset (const char* presetName, std::initializer_list<PresetPatch> overrides)
     : name (presetName)

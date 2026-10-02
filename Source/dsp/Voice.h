@@ -4,9 +4,9 @@
 #pragma once
 
 #include <algorithm>
-#include "Oscillator.h"
-#include "Envelope.h"
-#include "Filter.h"
+#include "dsp/Oscillator.h"
+#include "dsp/Envelope.h"
+#include "dsp/Filter.h"
 
 // A single voice produced by the synth (one note)
 struct Voice

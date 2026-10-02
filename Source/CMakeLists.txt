@@ -13,35 +13,36 @@ VERSION ${PROJECT_VERSION}
 )
 
 target_sources(JX11 PRIVATE
-    PluginProcessor.cpp
-    PluginProcessor.h
-    PluginEditor.cpp
-    PluginEditor.h
+    plugin/PluginProcessor.cpp
+    plugin/PluginProcessor.h
+    plugin/PluginEditor.cpp
+    plugin/PluginEditor.h
 
-    Utils.h
-    Constants.h
-    Parameters.h
-    ParameterList.h
-    SynthParams.h
-    MidiState.h
-    Tuning.h
-    Preset.h
-    Preset.cpp
+    common/Constants.h
+    common/Modulation.h
 
-    Voice.h
-    VoiceAllocator.h
-    Synth.h
-    Synth.cpp
+    model/ParameterList.h
+    model/Parameters.h
+    model/SynthParams.h
+    model/MidiState.h
+    model/Preset.h
+    model/Preset.cpp
 
-    NoiseGenerator.h
-    Oscillator.h
-    SinOscillator.h
-
-    Envelope.h
-    LFO.h
-    Modulation.h
-    
+    dsp/Utils.h
+    dsp/Envelope.h
+    dsp/Filter.h
+    dsp/LFO.h
+    dsp/NoiseGenerator.h
+    dsp/Oscillator.h
+    dsp/SinOscillator.h
+    dsp/Voice.h
+    dsp/VoiceAllocator.h
+    dsp/Synth.h
+    dsp/Synth.cpp
 )
+
+# so subfolder-qualified includes like "dsp/Synth.h" resolve for the plugin target
+target_include_directories(JX11 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_compile_features(JX11 PRIVATE cxx_std_17)
 

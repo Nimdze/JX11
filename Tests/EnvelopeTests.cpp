@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <juce_core/juce_core.h>
-#include "Envelope.h"
+#include "dsp/Envelope.h"
 
 namespace
 {

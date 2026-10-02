@@ -4,11 +4,10 @@
 #pragma once
 
 #include <cmath>
-#include "Voice.h"
-#include "SynthParams.h"
-#include "Tuning.h"
-#include "Modulation.h"
-#include "Constants.h"
+#include "dsp/Voice.h"
+#include "model/SynthParams.h"
+#include "common/Modulation.h"
+#include "common/Constants.h"
 
 // Note lifecycle: which voice a note-on lands on, the mono legato note queue,
 // voice stealing, and priming a voice's envelopes/oscillators. Everything here
