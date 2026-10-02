@@ -15,6 +15,7 @@ target_sources(JX11Tests PRIVATE
 
     EnvelopeTests.cpp
     LFOTests.cpp
+    FilterTests.cpp
     ModulationTests.cpp
 
     ${CMAKE_SOURCE_DIR}/Source/dsp/Synth.cpp
