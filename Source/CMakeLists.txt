@@ -49,8 +49,9 @@ target_link_libraries(JX11_engine PUBLIC
 # JX11_engine; only the host-facing and UI translation units are compiled here.
 # -----------------------------------------------------------------------------
 juce_add_plugin(JX11
-    COMPANY_NAME "yourcompany"
-    PLUGIN_MANUFACTURER_CODE Manu
+    COMPANY_NAME "Nimrod Adar"
+    BUNDLE_ID "com.nimdze.JX11"
+    PLUGIN_MANUFACTURER_CODE Nimd
     PLUGIN_CODE Jx11
     PRODUCT_NAME "JX11"
     DESCRIPTION "JX11 Subtractive Synth"

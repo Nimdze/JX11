@@ -66,7 +66,7 @@ jobs:
 
       - name: Validate AU (auval)
         if: matrix.arch == 'arm64'
-        run: auval -v aumu Jx11 Manu
+        run: auval -v aumu Jx11 Nimd
 
   # ---------------------------------------------------------------------------
   # Sanitizer builds. ASan/UBSan and TSan cannot be combined.

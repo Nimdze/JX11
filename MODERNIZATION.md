@@ -17,13 +17,13 @@ an earlier finding below, the decision wins.
 |---|---|
 | Commit the in-flight refactor | **Yes** — done in Phase 0 |
 | `.kilo/` worktrees | **Delete**; ignore `.kilo/` |
-| Plugin identity placeholders (`yourcompany`, `Manu`) | **Fine, leave as-is** |
+| Plugin identity placeholders (`yourcompany`, `Manu`) | **Set to `Nimrod Adar` / `Nimd`** for submission |
 | SPDX/copyright headers on every file | **No** — not adding; dropped from scope |
 | Goal 1 (organization) | In scope |
 | Goal 2 (modern audio standards) | In scope |
 | Goal 3 (test quality) | In scope, but see below |
 | Dedicated `Oscillator` / `NoiseGenerator` tests | **Skip for now** — those implementations may be replaced; `VoiceAllocator` and `processBlock` tests are the priority |
-| Goal 4 (DSP modernization) | In scope; if the oscillator changes, use **BLEP** (not wavetable) |
+| Goal 4 (DSP modernization) | **Not pursued** — BLEP oscillator deferred; the current oscillator is tested and has no known defect |
 | Goal 5 (new features) | **Out of scope** — focus on organization + modernization, avoid feature creep |
 
 ---
@@ -88,9 +88,8 @@ in logical, green commits. First action of Phase 0.
 up in every `git status`, confuse `rg`, and look sloppy. Delete it and add `.kilo/`
 to `.gitignore`.
 
-**O-3 [wontfix] Placeholder plugin identity.** `Source/CMakeLists.txt` still has
-`COMPANY_NAME "yourcompany"`, `PLUGIN_MANUFACTURER_CODE Manu`. **Decision: leave
-as-is.** No change planned.
+**O-3 [done] Plugin identity.** `Source/CMakeLists.txt` now uses
+`COMPANY_NAME "Nimrod Adar"` and `PLUGIN_MANUFACTURER_CODE Nimd` for submission.
 
 **O-4 [high] `Tests/CMakeLists.txt` recompiles production `.cpp` files.**
 Tests build `Synth.cpp`, `Preset.cpp`, `PluginProcessor.cpp` directly and hand-
@@ -199,15 +198,12 @@ expectWithinAbsoluteError (synth.midi.modWheel, 0.0f, 1.0e06f);
 The tolerance is `1,000,000`. This can never fail. It should be `1.0e-6f` (the
 intent is visible two lines later). Sweep the suite for other huge tolerances.
 
-**T-2 [deferred] No tests for the oscillator that the synth actually uses.**
-`SinOscillator` is tested, but `Oscillator` (the BLIT sawtooth) has **zero** direct
-tests. **Decision: skip for now** — the implementation may be replaced during goal 4,
-so writing tests against the current BLIT would be churn. Revisit after the BLEP
-work (see D-1), when the final oscillator must get full coverage.
+**T-2 [done] Tests for the oscillator the synth actually uses.** `OscillatorTests`
+covers determinism, phase reset, boundedness, period sensitivity, and
+`squareWave`. (The BLEP redesign was not pursued; see D-1.)
 
-**T-3 [deferred] No `NoiseGenerator` tests.** The book explicitly suggests them
-(range, variation, reproducibility). **Decision: skip for now** for the same reason
-— the generator may be replaced; test it once it is final.
+**T-3 [done] `NoiseGenerator` tests.** `NoiseGeneratorTests` covers range,
+variation, reproducibility, and zero-mean distribution.
 
 **T-4 [high] No `VoiceAllocator` tests.** Voice count, stealing choice, mono
 legato queue (`shiftQueuedNotes`/`nextQueuedNote`), sustain, and `SUSTAIN`
@@ -253,10 +249,10 @@ suite never asserts bus-layout rejection, `getTailLengthSeconds`, or
 
 Order these **after** goals 1–3 so tests guard the change.
 
-**D-1 [high] Replace/enhance the sawtooth oscillator.** The current oscillator is
-a BLIT saw. **Decision: if it changes, use BLEP** (band-limited step), not a
-wavetable. Add an aliasing measurement test. This is the highest-value audible
-modernization.
+**D-1 [not pursued] Replace/enhance the sawtooth oscillator.** The current
+oscillator is the book's BLIT saw. A BLEP (band-limited step) replacement would
+alias less at high pitches, but it was deliberately not pursued for JX11.5: the
+existing oscillator is tested and has no known defect. Recorded in `DEFERRED.md`.
 
 **D-2 [high] Robust, sample-rate-aware filter.** Fix the Nyquist clamp (A-2),
 then consider a TPT/ZDF SVF (`juce::dsp::StateVariableTPTFilter` or the current
@@ -342,7 +338,7 @@ Why first: everything else is diffed against this tree; a reviewer sees it too.
 
 - [x] Commit the in-flight refactor (O-1).
 - [x] Delete `.kilo/worktrees/`, ignore `.kilo/` (O-2).
-- [x] Plugin identity placeholders left as-is (O-3, decided).
+- [x] Plugin identity set to `Nimrod Adar` / `Nimd` (O-3).
 - [x] License headers left as-is (O-6, decided).
 - [x] Reconcile `DEFERRED.md` (§3), fix obvious typos/whitespace (O-8).
 - [x] `git config core.hooksPath .githooks`; confirm tests pass.
@@ -357,7 +353,7 @@ Why before refactoring/DSP: tests are the safety net for the changes that follow
 - [x] Add `VoiceAllocator` tests (T-4) and the `processBlock` output test (T-5) —
       the two priorities.
 - [x] Add `apply*` parameter-mapping tests (T-6).
-- [ ] (Deferred) `Oscillator`/`NoiseGenerator` tests (T-2/T-3) — do after D-1.
+- [x] `Oscillator`/`NoiseGenerator` tests (T-2/T-3).
 - [x] Tighten the loose filter/envelope assertions (T-7/T-8); fix test typos.
 - [x] Add the golden offline-render regression test (T-10).
 
@@ -365,8 +361,8 @@ Why before refactoring/DSP: tests are the safety net for the changes that follow
 the suite has at least one test that fails if you intentionally break each core
 module, and no assertion has a tolerance larger than the quantity it checks.
 
-_State: 101 test cases, green in Debug; `JX11_All` builds. `Oscillator` and
-`NoiseGenerator` remain untested by decision (T-2/T-3)._
+_State: 113 test cases, green in Debug and Release; `JX11_All` builds. Every DSP
+class now has direct coverage._
 
 ### Phase 2 — Structure, docs, build  *(goal 1)*
 - [x] Extract `JX11_engine` library; link plugin + tests against it (O-4).
@@ -420,12 +416,12 @@ and `auval` were run locally and are clean; pluginval must be confirmed on the n
 CI run (not installed locally). Remove `continue-on-error` from the clang-tidy job
 once tuned._
 
-### Phase 5 — DSP modernization  *(goal 4, optional)*
-- [ ] BLEP oscillator + aliasing test (D-1).
-- [ ] Robust filter + smoothing (D-2/D-3).
-- [ ] Block/SIMD prototype + benchmark, keep whichever passes tests (D-4).
-- [ ] Publish CPU measurements in README (D-5).
-- [ ] Oversampling / noise upgrade (D-6).
+### Phase 5 — DSP modernization  *(goal 4 — not pursued)*
+
+Deliberately skipped for JX11.5. The BLEP oscillator (D-1) is recorded in
+`DEFERRED.md`; the other items (SIMD, oversampling, benchmarks) were optional and
+are not needed for the submission. D-2/D-3 (filter robustness and start-up) were
+already covered by Phase 3.
 
 ### Phase 6 — Optional features  *(goal 5 — out of scope)*
 
@@ -447,8 +443,8 @@ The repository is ready to attach to a CV when:
    the module is broken; no tautological tolerances remain.
 6. No uninitialised state, no Nyquist bug, no first-note filter sweep.
 7. `CHANGELOG.md` and a version tag describe the JX11 → JX11.5 delta.
-8. At least one optional DSP improvement ships with tests. (New features are out of
-   scope by decision.)
+8. Optional DSP modernization is documented as a deliberate decision (BLEP
+   deferred); new features are out of scope.
 9. `DEFERRED.md` reflects reality (no stale "todo" items that are already done).
 
 ---
