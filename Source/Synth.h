@@ -15,7 +15,7 @@ class Synth
 {
 public:
     // Synth properties
-    static constexpr int MAX_VOICES = 8;
+    static constexpr int MAX_VOICES = SynthLimits::MAX_VOICES;
 
     SynthParams params;
 

@@ -5,8 +5,12 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <memory>
+#include <cmath>
 
+#include "SynthParams.h"
 #include "ParameterList.h"
+#include "Modulation.h"
+#include "Constants.h"
 
 namespace Params
 {
@@ -24,13 +28,16 @@ struct Spec
     const char* const* choices; // nullptr => float param
     int numChoices;
     ToTextFn toText; // nullptr => JUCE default formatting
+    ApplyFn apply;
 };
 
 // Choice lists outside the table - spec trivially copyable
 inline const char* const kGlideModeChoices[] = {"Off", "Legato", "Always"};
 inline const char* const kPolyModeChoices[] = {"Mono", "Poly"};
 
-// --- value to text (UI thread only) ---
+//==============================================================================
+// value to text (UI thread only) 
+//==============================================================================
 inline juce::String oscMixToText (float value, int)
 {
     char s[16] = {};
@@ -50,36 +57,117 @@ inline juce::String vibratoToText (float value, int)
     return value < 0.0f ? "PWM " + juce::String (-value, 1) : juce::String (value, 1);
 }
 
+//==============================================================================
+//
+//==============================================================================
+
+inline void applyPolyMode (SynthParams& p, float v, const UpdateContext&) noexcept                 
+{ p.numVoices = (v < 0.5f) ? 1 : SynthLimits::MAX_VOICES; }                                        
+                                                                                                      
+inline void applyNoise (SynthParams& p, float v, const UpdateContext&) noexcept                    
+{ const float n = v / 100.0f; p.noiseMix = n * n * 0.06f; }                                        
+                                                                                                      
+inline void applyOscMix (SynthParams& p, float v, const UpdateContext&) noexcept                   
+{ p.oscMix = v / 100.0f; }                                                                         
+                                                                                                      
+inline void applyFilterReso (SynthParams& p, float v, const UpdateContext&) noexcept               
+{ p.filterQ = std::exp (3.0f * (v / 100.0f)); }                                                    
+                                                                                                      
+inline void applyEnvAttack (SynthParams& p, float v, const UpdateContext& c) noexcept              
+{ p.envAttack = std::exp (-c.inverseSampleRate * std::exp (5.5f - 0.075f * v)); }                  
+                                                                                                      
+inline void applyEnvDecay (SynthParams& p, float v, const UpdateContext& c) noexcept               
+{ p.envDecay = std::exp (-c.inverseSampleRate * std::exp (5.5f - 0.075f * v)); }                   
+                                                                                                      
+inline void applyEnvSustain (SynthParams& p, float v, const UpdateContext&) noexcept               
+{ p.envSustain = v / 100.0f; }                                                                     
+                                                                                                      
+inline void applyEnvRelease (SynthParams& p, float v, const UpdateContext& c) noexcept             
+{ p.envRelease = (v < 1.0f) ? 0.75f : std::exp (-c.inverseSampleRate * std::exp (5.5f - 0.075f * v)); }                                                                                               
+                                                                                                      
+inline void applyFilterVelocity (SynthParams& p, float v, const UpdateContext&) noexcept           
+{                                                                                                  
+    if (v < -90.0f) { p.velocitySensitivity = 0.0f; p.ignoreVelocity = true; }                     
+    else            { p.velocitySensitivity = 0.0005f * v; p.ignoreVelocity = false; }             
+}                                                                                                  
+                                                                                                      
+inline void applyLfoRate (SynthParams& p, float v, const UpdateContext& c) noexcept                
+{ p.lfoInc = lfoRateHz (v) * c.inverseUpdateRate * float (2 * PI); }                               
+                                                                                                      
+inline void applyVibrato (SynthParams& p, float v, const UpdateContext&) noexcept                  
+{                                                                                                  
+    p.pwmDepth = vibratoDepth (v);                                                                 
+    p.vibrato  = (v / 200.0f < 0.0f) ? 0.0f : p.pwmDepth;                                          
+}                                                                                                  
+                                                                                                      
+inline void applyGlideMode (SynthParams& p, float v, const UpdateContext&) noexcept                
+{ p.glideMode = static_cast<int> (v); }                                                            
+                                                                                                      
+inline void applyGlideRate (SynthParams& p, float v, const UpdateContext& c) noexcept              
+{ p.glideRate = (v < 2.0f) ? 1.0f : glideCoefficient (v, c.inverseUpdateRate); }                   
+                                                                                                      
+inline void applyGlideBend (SynthParams& p, float v, const UpdateContext&) noexcept                
+{ p.glideBend = v; }                                                                               
+                                                                                                      
+inline void applyFilterFreq (SynthParams& p, float v, const UpdateContext&) noexcept               
+{ p.filterKeyTracking = 0.08f * v - 1.5f; }                                                        
+                                                                                                      
+inline void applyFilterLFO (SynthParams& p, float v, const UpdateContext&) noexcept                
+{ const float f = v / 100.0f; p.filterLFODepth = 2.5f * f * f; }                                   
+                                                                                                      
+inline void applyFilterAttack (SynthParams& p, float v, const UpdateContext& c) noexcept           
+{ p.filterAttack = std::exp (-c.inverseUpdateRate * std::exp (5.5f - 0.075f * v)); }               
+                                                                                                      
+inline void applyFilterDecay (SynthParams& p, float v, const UpdateContext& c) noexcept            
+{ p.filterDecay = std::exp (-c.inverseUpdateRate * std::exp (5.5f - 0.075f * v)); }                
+                                                                                                      
+inline void applyFilterSustain (SynthParams& p, float v, const UpdateContext&) noexcept            
+{ const float s = v / 100.0f; p.filterSustain = s * s; }                                           
+                                                                                                      
+inline void applyFilterRelease (SynthParams& p, float v, const UpdateContext& c) noexcept          
+{ p.filterRelease = std::exp (-c.inverseUpdateRate * std::exp (5.5f - 0.075f * v)); }              
+                                                                                                      
+inline void applyFilterEnv (SynthParams& p, float v, const UpdateContext&) noexcept                
+{ p.filterEnvDepth = 0.06f * v; }
+
+//==============================================================================
+//
+//==============================================================================
+
 // must follow the exact order in ParameterList.h
 inline const Spec kSpecs[NumParams] = {
-    // id,             name,            label,  min,     max,     interval, skew,  sym,   default, choices, n, toText
-    {"oscMix", "Osc Mix", "%", 0.0f, 100.0f, 0.0f, 1.0f, false, 0.0f, nullptr, 0, oscMixToText},
-    {"oscTune", "Osc Tune", "semi", -24.0f, 24.0f, 1.0f, 1.0f, false, -12.0f, nullptr, 0, nullptr},
-    {"oscFine", "Osc Fine", "cent", -50.0f, 50.0f, 0.1f, 0.3f, true, 0.0f, nullptr, 0, nullptr},
-    {"glideMode", "Glide Mode", "", 0.0f, 2.0f, 1.0f, 1.0f, false, 0.0f, kGlideModeChoices, 3, nullptr},
-    {"glideRate", "Glide Rate", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 35.0f, nullptr, 0, nullptr},
-    {"glideBend", "Glide Bend", "semi", -36.0f, 36.0f, 0.01f, 0.4f, true, 0.0f, nullptr, 0, nullptr},
-    {"filterFreq", "Filter Freq", "%", 0.0f, 100.0f, 0.1f, 1.0f, false, 100.0f, nullptr, 0, nullptr},
-    {"filterReso", "Filter Reso", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 15.0f, nullptr, 0, nullptr},
-    {"filterEnv", "Filter Env", "%", -100.0f, 100.0f, 0.1f, 1.0f, false, 50.0f, nullptr, 0, nullptr},
-    {"filterLFO", "Filter LFO", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 0.0f, nullptr, 0, nullptr},
-    {"filterVelocity", "Velocity", "%", -100.0f, 100.0f, 1.0f, 1.0f, false, 0.0f, nullptr, 0, filterVelocityToText},
-    {"filterAttack", "Filter Attack", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 0.0f, nullptr, 0, nullptr},
-    {"filterDecay", "Filter Decay", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 30.0f, nullptr, 0, nullptr},
-    {"filterSustain", "Filter Sustain", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 0.0f, nullptr, 0, nullptr},
-    {"filterRelease", "Filter Release", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 25.0f, nullptr, 0, nullptr},
-    {"envAttack", "Env Attack", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 0.0f, nullptr, 0, nullptr},
-    {"envDecay", "Env Decay", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 50.0f, nullptr, 0, nullptr},
-    {"envSustain", "Env Sustain", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 100.0f, nullptr, 0, nullptr},
-    {"envRelease", "Env Release", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 30.0f, nullptr, 0, nullptr},
-    {"lfoRate", "LFO Rate", "Hz", 0.0f, 1.0f, 0.0f, 1.0f, false, 0.81f, nullptr, 0, lfoRateToText},
-    {"vibrato", "Vibrato", "%", -100.0f, 100.0f, 1.0f, 1.0f, false, 0.0f, nullptr, 0, vibratoToText},
-    {"noise", "Noise", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 0.0f, nullptr, 0, nullptr},
-    {"octave", "Octave", "", -2.0f, 2.0f, 1.0f, 1.0f, false, 0.0f, nullptr, 0, nullptr},
-    {"tuning", "Tuning", "cent", -100.0f, 100.0f, 0.1f, 1.0f, false, 0.0f, nullptr, 0, nullptr},
-    {"outputLevel", "Output Level", "dB", -24.0f, 6.0f, 0.1f, 1.0f, false, 0.0f, nullptr, 0, nullptr},
-    {"polyMode", "Polyphony", "", 0.0f, 1.0f, 1.0f, 1.0f, false, 1.0f, kPolyModeChoices, 2, nullptr},
+    // id,             name,            label,  min,     max,     interval, skew,  sym,   default, choices, n, toText, apply
+    {"oscMix", "Osc Mix", "%", 0.0f, 100.0f, 0.0f, 1.0f, false, 0.0f, nullptr, 0, oscMixToText, applyOscMix},
+    {"oscTune", "Osc Tune", "semi", -24.0f, 24.0f, 1.0f, 1.0f, false, -12.0f, nullptr, 0, nullptr, nullptr},
+    {"oscFine", "Osc Fine", "cent", -50.0f, 50.0f, 0.1f, 0.3f, true, 0.0f, nullptr, 0, nullptr, nullptr},
+    {"glideMode", "Glide Mode", "", 0.0f, 2.0f, 1.0f, 1.0f, false, 0.0f, kGlideModeChoices, 3, nullptr, applyGlideMode},
+    {"glideRate", "Glide Rate", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 35.0f, nullptr, 0, nullptr, applyGlideRate},
+    {"glideBend", "Glide Bend", "semi", -36.0f, 36.0f, 0.01f, 0.4f, true, 0.0f, nullptr, 0, nullptr, applyGlideBend},
+    {"filterFreq", "Filter Freq", "%", 0.0f, 100.0f, 0.1f, 1.0f, false, 100.0f, nullptr, 0, nullptr, applyFilterFreq},
+    {"filterReso", "Filter Reso", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 15.0f, nullptr, 0, nullptr, applyFilterReso},
+    {"filterEnv", "Filter Env", "%", -100.0f, 100.0f, 0.1f, 1.0f, false, 50.0f, nullptr, 0, nullptr, applyFilterEnv},
+    {"filterLFO", "Filter LFO", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 0.0f, nullptr, 0, nullptr, applyFilterLFO},
+    {"filterVelocity", "Velocity", "%", -100.0f, 100.0f, 1.0f, 1.0f, false, 0.0f, nullptr, 0, filterVelocityToText, applyFilterVelocity},
+    {"filterAttack", "Filter Attack", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 0.0f, nullptr, 0, nullptr, applyFilterAttack},
+    {"filterDecay", "Filter Decay", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 30.0f, nullptr, 0, nullptr, applyFilterDecay},
+    {"filterSustain", "Filter Sustain", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 0.0f, nullptr, 0, nullptr, applyFilterSustain},
+    {"filterRelease", "Filter Release", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 25.0f, nullptr, 0, nullptr, applyFilterRelease},
+    {"envAttack", "Env Attack", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 0.0f, nullptr, 0, nullptr, applyEnvAttack},
+    {"envDecay", "Env Decay", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 50.0f, nullptr, 0, nullptr, applyEnvDecay},
+    {"envSustain", "Env Sustain", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 100.0f, nullptr, 0, nullptr, applyEnvSustain},
+    {"envRelease", "Env Release", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 30.0f, nullptr, 0, nullptr, applyEnvRelease},
+    {"lfoRate", "LFO Rate", "Hz", 0.0f, 1.0f, 0.0f, 1.0f, false, 0.81f, nullptr, 0, lfoRateToText, applyLfoRate},
+    {"vibrato", "Vibrato", "%", -100.0f, 100.0f, 1.0f, 1.0f, false, 0.0f, nullptr, 0, vibratoToText, applyVibrato},
+    {"noise", "Noise", "%", 0.0f, 100.0f, 1.0f, 1.0f, false, 0.0f, nullptr, 0, nullptr, applyNoise},
+    {"octave", "Octave", "", -2.0f, 2.0f, 1.0f, 1.0f, false, 0.0f, nullptr, 0, nullptr, nullptr},
+    {"tuning", "Tuning", "cent", -100.0f, 100.0f, 0.1f, 1.0f, false, 0.0f, nullptr, 0, nullptr, nullptr},
+    {"outputLevel", "Output Level", "dB", -24.0f, 6.0f, 0.1f, 1.0f, false, 0.0f, nullptr, 0, nullptr, nullptr},
+    {"polyMode", "Polyphony", "", 0.0f, 1.0f, 1.0f, 1.0f, false, 1.0f, kPolyModeChoices, 2, nullptr, applyPolyMode},
 };
+
+//==============================================================================
+//
+//==============================================================================
 
 inline juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
 {

@@ -47,3 +47,14 @@
        float filterRelease      = 0.0f;                                                               
        float filterEnvDepth     = 0.0f;                                                               
    };
+
+   struct UpdateContext
+   {
+        float sampleRate;
+        float inverseSampleRate;
+        float inverseUpdateRate;
+   };
+
+   using ApplyFn = void (*) (SynthParams&, float value, const UpdateContext&);
+
+   namespace SynthLimits { constexpr int MAX_VOICES = 8; }
