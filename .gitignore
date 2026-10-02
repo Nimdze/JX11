@@ -3,9 +3,7 @@
 
 # CMake build trees (generated, large, machine-specific)
 build/
-build-vscode/
-build-xcode/
-build-asan/
+build-*/
 
 # Editor / tooling cruft
 *.swp

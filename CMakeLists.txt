@@ -9,6 +9,16 @@ endif()
 
 project(JX11 VERSION 1.0.0 LANGUAGES C CXX)
 
+# Optional sanitizers for hardening builds, e.g.
+#   cmake -B build-asan -DJX11_SANITIZERS=address,undefined
+#   cmake -B build-tsan -DJX11_SANITIZERS=thread
+# Kept as a cache variable so CI and contributors configure them the same way.
+set(JX11_SANITIZERS "" CACHE STRING "Comma-separated sanitizers (address,undefined or thread)")
+if(JX11_SANITIZERS)
+    add_compile_options(-fsanitize=${JX11_SANITIZERS} -fno-omit-frame-pointer -g -fno-sanitize-recover=all)
+    add_link_options(-fsanitize=${JX11_SANITIZERS})
+endif()
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
