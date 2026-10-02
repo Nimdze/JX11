@@ -42,6 +42,14 @@ Targets:
     cmake --build build-vscode --target JX11Tests -j8
     ctest --test-dir build-vscode --output-on-failure
 
+## Documentation
+
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — layers, signal flow, thread model, build targets.
+- [`Source/README.md`](Source/README.md) — file-by-file thread affinity.
+- [`MODERNIZATION.md`](MODERNIZATION.md) — what JX11.5 changes and why.
+- [`CHANGELOG.md`](CHANGELOG.md) — release history.
+- [`DEFERRED.md`](DEFERRED.md) — intentionally postponed work.
+
 ## Outputs
 
 Built artefacts live under `build-vscode/Source/JX11_artefacts/Debug/`.
