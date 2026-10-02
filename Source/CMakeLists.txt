@@ -22,6 +22,7 @@ target_sources(JX11 PRIVATE
     Constants.h
     Parameters.h
     ParameterList.h
+    SynthParams.h
     Preset.h
     Preset.cpp
 

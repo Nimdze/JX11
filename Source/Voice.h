@@ -6,6 +6,7 @@
 #include <algorithm>
 #include "Oscillator.h"
 #include "Envelope.h"
+#include "Filter.h"
 
 // A single voice produced by the synth (one note)
 struct Voice
@@ -24,6 +25,16 @@ struct Voice
 
     Envelope env;
 
+    Filter filter;
+    float cutoff;
+    float filterMod;
+    float filterQ;
+
+    float pitchBend;
+
+    Envelope filterEnv;
+    float filterEnvDepth;
+
     void reset()
     {
         note = -1;
@@ -35,6 +46,9 @@ struct Voice
         saw = 0.0f;
 
         env.reset();
+
+        filter.reset();
+        filterEnv.reset();
     }
 
     float render (float input)
@@ -44,12 +58,17 @@ struct Voice
         saw = saw * 0.997f + sample1 - sample2;
 
         float output = saw + input;
+        output = filter.render(output);
 
         float envelope = env.nextValue();
         return output * envelope;
     }
 
-    void release() { env.release(); }
+    void release() 
+    { 
+        env.release();
+        filterEnv.release();
+    }
 
     void updatePanning()
     {
@@ -59,5 +78,13 @@ struct Voice
         panRight = std::sin ((PI / 4) * (1.0f + panning));
     }
 
-    void updateLFO() { period += glideRate * (target - period); }
+    void updateLFO() 
+    { 
+        period += glideRate * (target - period);
+        
+        float fenv = filterEnv.nextValue();
+        float modulatedCutoff = cutoff * std::exp(filterMod + filterEnvDepth * fenv) / pitchBend;
+        modulatedCutoff = std::clamp(modulatedCutoff, 30.0f, 20000.0f);
+        filter.updateCoefficients(modulatedCutoff, filterQ);
+    }
 };

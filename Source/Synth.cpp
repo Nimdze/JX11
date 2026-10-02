@@ -20,6 +20,11 @@ Synth::Synth()
 void Synth::allocateResources (double sampleRate_, int /*samplesPerBlock*/)
 {
     sampleRate = static_cast<float> (sampleRate_);
+
+    for (int v = 0; v < MAX_VOICES; ++v)
+    {
+        voices[v].filter.sampleRate = sampleRate;
+    }
 }
 
 void Synth::deallocateResources() {}
@@ -38,6 +43,12 @@ void Synth::reset()
     modWheel = 0.0f;
     lastNote = 0;
 
+    resonanceCtl = 1.0f;
+    filterCtl = 0.0f;
+    filterZip = 0.0f;
+
+    pressure = 0.0f;
+
     lfo.reset();
 }
 
@@ -55,7 +66,10 @@ void Synth::render (float** outputBuffers, int sampleCount)
         if (voice.env.isActive())
         {
             updatePeriod (voice);
-            voice.glideRate = glideRate;
+            voice.glideRate = params.glideRate;
+            voice.filterQ = params.filterQ * resonanceCtl;
+            voice.pitchBend = pitchBend;
+            voice.filterEnvDepth = params.filterEnvDepth;
         }
     }
 
@@ -63,7 +77,7 @@ void Synth::render (float** outputBuffers, int sampleCount)
     {
         updateLFO();
 
-        const float noise = noiseGen.nextValue() * noiseMix;
+        const float noise = noiseGen.nextValue() * params.noiseMix;
 
         float outputLeft = 0.0f;
         float outputRight = 0.0f;
@@ -98,6 +112,7 @@ void Synth::render (float** outputBuffers, int sampleCount)
         if (!voice.env.isActive())
         {
             voice.env.reset();
+            voice.filter.reset();
         }
     }
 
@@ -133,18 +148,22 @@ void Synth::midiMessage (uint8_t data0, uint8_t data1, uint8_t data2)
             break;
         }
 
+        case 0xB0: // Control change
+        {
+            controlChange (data1, data2);
+            break;
+        }
+
+        case 0xD0:
+            pressure = 0.0001f * float (data1 * data1);
+            break;
+
         case 0xE0: // Pitch bend
         {
             // float(data1 +128 * data2 - 8192) gives anumber between -8192 and 8191
             // mapping this range to 2^(2/12) to 2^(-2/12) (multiplying the period)
             // 2^((-2*(data/8192))/12) = (2^((-2/8192)/12))^data = exp^(M*data)
             pitchBend = std::exp (-0.000014102f * float (data1 + 128 * data2 - 8192));
-            break;
-        }
-
-        case 0xB0: // Control change
-        {
-            controlChange (data1, data2);
             break;
         }
     }
@@ -160,11 +179,11 @@ void Synth::startVoice (int v, int note, int rawVelocity)
     int noteDistance = 0;
     if (lastNote > 0)
     {
-        if ((glideMode == 2) || ((glideMode == 1) && isPlayingLegatoStyle()))
+        if ((params.glideMode == 2) || ((params.glideMode == 1) && isPlayingLegatoStyle()))
             noteDistance = note - lastNote;
     }
 
-    voice.period = period * std::pow (1.059463094359f, float (noteDistance) - glideBend);
+    voice.period = period * std::pow (1.059463094359f, float (noteDistance) - params.glideBend);
 
     if (voice.period < 6.0f)
     {
@@ -177,23 +196,33 @@ void Synth::startVoice (int v, int note, int rawVelocity)
     voice.updatePanning();
 
     float velocity = velocityCurve (rawVelocity);
-    voice.osc1.amplitude = volumeTrim * static_cast<float> (velocity);
+    voice.osc1.amplitude = params.volumeTrim * static_cast<float> (velocity);
     // voice.osc1.reset();
 
-    voice.osc2.amplitude = voice.osc1.amplitude * oscMix;
+    voice.osc2.amplitude = voice.osc1.amplitude * params.oscMix;
     // voice.osc2.reset();
 
-    if (vibrato == 0.0f && pwmDepth > 0.0f)
+    if (params.vibrato == 0.0f && params.pwmDepth > 0.0f)
     {
         voice.osc2.squareWave (voice.osc1, voice.period);
     }
 
+    voice.cutoff = sampleRate / (period * PI);
+    voice.cutoff *= std::exp (params.velocitySensitivity * float(velocity - 64));
+
     Envelope& env = voice.env;
-    env.attackMultiplier = envAttack;
-    env.decayMultiplier = envDecay;
-    env.sustainLevel = envSustain;
-    env.releaseMultiplier = envRelease;
+    env.attackMultiplier = params.envAttack;
+    env.decayMultiplier = params.envDecay;
+    env.sustainLevel = params.envSustain;
+    env.releaseMultiplier = params.envRelease;
     env.attack();
+
+    Envelope& filterEnv = voice.filterEnv;
+    filterEnv.attackMultiplier = params.filterAttack;
+    filterEnv.decayMultiplier = params.filterDecay;
+    filterEnv.sustainLevel = params.filterSustain;
+    filterEnv.releaseMultiplier = params.filterRelease;
+    filterEnv.attack();
 }
 
 int Synth::findFreeVoice() const
@@ -220,7 +249,7 @@ void Synth::restartMonoVoice (int note, int velocity)
     Voice& voice = voices[0];
     voice.target = period;
 
-    if (glideMode == 0)
+    if (params.glideMode == 0)
     {
         voice.period = period;
     }
@@ -228,6 +257,10 @@ void Synth::restartMonoVoice (int note, int velocity)
     voice.env.level += SILENCE + SILENCE;
     voice.note = note;
     voice.updatePanning();
+
+    voice.cutoff = sampleRate / (period * PI);
+    if (velocity > 0)
+        voice.cutoff *= std::exp(params.velocitySensitivity * float(velocity - 64));
 }
 
 void Synth::shiftQueuedNotes()
@@ -258,14 +291,14 @@ int Synth::nextQueuedNote()
 
 void Synth::noteOn (int note, int velocity)
 {
-    if (ignoreVelocity)
+    if (params.ignoreVelocity)
     {
         velocity = 80;
     }
 
     int v = 0; // 0 for mono
 
-    if (numVoices == 1) // mono
+    if (params.numVoices == 1) // mono
     {
         if (voices[0].note > 0) // legato
         {
@@ -285,7 +318,7 @@ void Synth::noteOn (int note, int velocity)
 
 void Synth::noteOff (int note)
 {
-    if ((numVoices == 1) && (voices[0].note == note))
+    if ((params.numVoices == 1) && (voices[0].note == note))
     {
         int queuedNote = nextQueuedNote();
         if (queuedNote > 0)
@@ -323,6 +356,18 @@ void Synth::controlChange (uint8_t data1, uint8_t data2)
         case 0x01:
             modWheel = modWheelDepth (data2);
             break;
+        
+        case 0x47: // Resonance
+            resonanceCtl = 154.0f / float(154 - data2);
+            break;
+        
+        case 0x4A: // Filter +
+            filterCtl = 0.02f * float(data2);
+            break;
+
+        case 0x4B: // Filter -
+            filterCtl = -0.03f * float(data2);
+            break;
 
         default: // panic, all notes off - 120 or above
             if (data1 >= 0X78)
@@ -332,6 +377,7 @@ void Synth::controlChange (uint8_t data1, uint8_t data2)
                 sustainPedalPressed = false;
             }
             break;
+            
     }
 }
 
@@ -342,9 +388,9 @@ float Synth::calcPeriod (int v, int note) const
     // define tune = (sampleRate/(440 * 2^(-69/12)))
     // 2^(-note/12) = (2^(-1/12))^note = exp^(M * note)
     // adding slight detune per voice to simulate analog synth detune
-    float period = tune * std::exp (-0.05776226505f * (float (note) + ANALOG * float (v)));
+    float period = params.tune * std::exp (-0.05776226505f * (float (note) + ANALOG * float (v)));
 
-    while (period < 6.0f || (period * detune) < 6.0f)
+    while (period < 6.0f || (period * params.detune) < 6.0f)
     {
         if (period <= 0.0f)
             period = 6.0f;
@@ -361,13 +407,17 @@ float Synth::calcPeriod (int v, int note) const
 
 void Synth::updateLFO()
 {
-    if (!lfo.advance (lfoInc))
+    if (!lfo.advance (params.lfoInc))
         return;
 
     const float sine = lfo.current();
 
-    float vibratoMod = 1.0f + sine * (modWheel + vibrato);
-    float pwm = 1.0f + sine * (modWheel + pwmDepth);
+    float vibratoMod = 1.0f + sine * (modWheel + params.vibrato);
+    float pwm = 1.0f + sine * (modWheel + params.pwmDepth);
+
+    float filterMod = params.filterKeyTracking + filterCtl + (params.filterLFODepth + pressure) * sine;
+
+    filterZip += 0.005f * (filterMod - filterZip);
 
     for (int v = 0; v < MAX_VOICES; ++v)
     {
@@ -379,6 +429,7 @@ void Synth::updateLFO()
             // if vibrato is non-negative both values will be the same and both oscillators will have vibrato,
             // if vibrato is negative then vibratoMod is 0 and only the osc2 get modulated (resulting in pwm)
 
+            voice.filterMod = filterZip;
             voice.updateLFO();
             updatePeriod (voice);
         }
