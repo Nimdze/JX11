@@ -12,6 +12,9 @@ plug-in validation in CI, and a custom UI.
 
 ## What's different from the book's JX11
 
+- **CMake instead of Projucer** — the project is a first-class CMake build. JUCE is
+  pulled in with `FetchContent` and pinned to a version, so there is no `.jucer`
+  file and nothing to generate by hand; a clean clone configures and builds.
 - **Layered source tree** — `common/` → `model/` → `dsp/` → `plugin/`, with the
   engine built as a `JX11_engine` static library shared by the plug-in and the
   tests, so the tested DSP is the shipped DSP.
