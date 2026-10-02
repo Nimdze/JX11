@@ -21,7 +21,6 @@ add_library(JX11_engine STATIC
     dsp/LFO.h
     dsp/NoiseGenerator.h
     dsp/Oscillator.h
-    dsp/SinOscillator.h
     dsp/Voice.h
     dsp/VoiceAllocator.h
     dsp/Synth.h

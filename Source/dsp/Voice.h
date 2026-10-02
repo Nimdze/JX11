@@ -9,7 +9,7 @@
 struct Voice
 {
     int note = -1;
-    Oscillator osc1; // for now voice doesnt use sinOsc
+    Oscillator osc1;
     Oscillator osc2;
 
     float period = 0.0f;

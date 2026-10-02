@@ -27,7 +27,7 @@ JUCE parameter objects.
 - `dsp/Synth.{h,cpp}` — block setup, per-sample mixing, `updateLFO()`, MIDI dispatch.
 - `dsp/Voice.h` — per-voice `render()`, the hottest path.
 - `dsp/VoiceAllocator.h` — note on/off, mono queue, voice stealing (note rate, still audio thread).
-- `dsp/Oscillator.h`, `dsp/SinOscillator.h`, `dsp/Filter.h`, `dsp/Envelope.h`,
+- `dsp/Oscillator.h`, `dsp/Filter.h`, `dsp/Envelope.h`,
   `dsp/LFO.h`, `dsp/NoiseGenerator.h` — per-sample DSP primitives (header-inline
   so they inline into the loop).
 - `dsp/Utils.h` — `protectYourEars()`, output guarding.
