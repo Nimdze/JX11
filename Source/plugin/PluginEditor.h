@@ -9,6 +9,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include <memory>
 #include "plugin/PluginProcessor.h"
 #include "plugin/LookAndFeel.h"
 #include "model/ParameterList.h"
@@ -76,8 +77,14 @@ class ParamChoice : public ParamControl
 public:
     ParamChoice (int index, juce::AudioProcessorValueTreeState& state)
         : ParamControl (index)
-        , attachment (state, Params::kIds[index], combo)
     {
+        // The ComboBoxAttachment syncs the selection but does not populate the
+        // list, so add the choices before creating the attachment (which reads
+        // the current value in its constructor).
+        const auto& spec = Params::kSpecs[index];
+        for (int i = 0; i < spec.numChoices; ++i)
+            combo.addItem (spec.choices[i], i + 1);
+
         name.setText (getDisplayName(), juce::dontSendNotification);
         name.setJustificationType (juce::Justification::centred);
         name.setInterceptsMouseClicks (false, false);
@@ -85,6 +92,9 @@ public:
 
         combo.setTitle (getDisplayName());
         addAndMakeVisible (combo);
+
+        attachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (
+            state, Params::kIds[index], combo);
     }
 
     void resized() override
@@ -94,10 +104,14 @@ public:
         combo.setBounds (area.withSizeKeepingCentre (area.getWidth() - 8, 24));
     }
 
+    // Exposed for the regression test that the list gets populated.
+    int getNumChoices() const noexcept { return combo.getNumItems(); }
+
 private:
     juce::Label name;
     juce::ComboBox combo;
-    juce::AudioProcessorValueTreeState::ComboBoxAttachment attachment;
+    // Declared after `combo` so it is destroyed first (JUCE attachment rule).
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> attachment;
 };
 
 } // namespace JX11Ui

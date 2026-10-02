@@ -21,6 +21,7 @@ target_sources(JX11Tests PRIVATE
     FilterTests.cpp
     ModulationTests.cpp
     GoldenRenderTests.cpp
+    ChoiceControlTests.cpp
 
     # The processor is the one host-facing unit the tests exercise directly.
     # It is compiled here with JX11_HEADLESS so the UI translation units are
@@ -33,6 +34,7 @@ target_include_directories(JX11Tests PRIVATE ${CMAKE_SOURCE_DIR}/Source)
 target_link_libraries(JX11Tests PRIVATE
     JX11_engine
     juce::juce_audio_processors
+    juce::juce_gui_basics
     juce::juce_recommended_warning_flags
     )
 
