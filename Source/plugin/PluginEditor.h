@@ -87,40 +87,74 @@ public:
     ParamChoice (int index, juce::AudioProcessorValueTreeState& state)
         : ParamControl (index)
     {
-        // The ComboBoxAttachment syncs the selection but does not populate the
-        // list, so add the choices before creating the attachment (which reads
-        // the current value in its constructor).
-        const auto& spec = Params::kSpecs[index];
-        for (int i = 0; i < spec.numChoices; ++i)
-            combo.addItem (spec.choices[i], i + 1);
-
         name.setText (getDisplayName(), juce::dontSendNotification);
         name.setJustificationType (juce::Justification::centred);
         name.setInterceptsMouseClicks (false, false);
         addAndMakeVisible (name);
 
-        combo.setTitle (getDisplayName());
-        addAndMakeVisible (combo);
+        const auto& spec = Params::kSpecs[index];
 
-        attachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (
-            state, Params::kIds[index], combo);
+        for (int i = 0; i < spec.numChoices; ++i)
+        {
+            auto* button = buttons.add (new juce::TextButton (spec.choices[i]));
+            button->setClickingTogglesState (false);
+            button->setWantsKeyboardFocus (false);
+            button->setMouseClickGrabsKeyboardFocus (false);
+            button->onClick = [this, i] { selectChoice (i); };
+            addAndMakeVisible (button);
+        }
+
+        if (auto* parameter = state.getParameter (Params::kIds[index]))
+        {
+            attachment = std::make_unique<juce::ParameterAttachment> (*parameter,
+                                                                      [this] (float value) { updateButtons (value); });
+            attachment->sendInitialUpdate();
+        }
     }
 
     void resized() override
     {
         auto area = getLocalBounds();
         name.setBounds (area.removeFromTop (18));
-        combo.setBounds (area.withSizeKeepingCentre (area.getWidth() - 8, 24));
+
+        area = area.reduced (2);
+        if (buttons.isEmpty())
+            return;
+
+        // Stack the options vertically and centre the column, so labels like
+        // "Legato"/"Always" get the full cell width instead of clipping.
+        constexpr int buttonHeight = 22;
+        const int totalHeight = buttons.size() * buttonHeight;
+        area = area.withSizeKeepingCentre (area.getWidth(), juce::jmin (area.getHeight(), totalHeight));
+
+        for (auto* button : buttons)
+            button->setBounds (area.removeFromTop (buttonHeight).reduced (1));
     }
 
-    // Exposed for the regression test that the list gets populated.
-    int getNumChoices() const noexcept { return combo.getNumItems(); }
+    // Exposed for the regression test that every option becomes a button.
+    int getNumChoices() const noexcept { return buttons.size(); }
 
 private:
+    void selectChoice (int index)
+    {
+        updateButtons (static_cast<float> (index)); // immediate visual feedback
+
+        if (attachment != nullptr)
+            attachment->setValueAsCompleteGesture (static_cast<float> (index));
+    }
+
+    void updateButtons (float value)
+    {
+        const int index = juce::roundToInt (value);
+
+        for (int i = 0; i < buttons.size(); ++i)
+            buttons[i]->setToggleState (i == index, juce::dontSendNotification);
+    }
+
     juce::Label name;
-    juce::ComboBox combo;
-    // Declared after `combo` so it is destroyed first (JUCE attachment rule).
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> attachment;
+    juce::OwnedArray<juce::TextButton> buttons;
+    // Declared after `buttons` so it is destroyed first (JUCE attachment rule).
+    std::unique_ptr<juce::ParameterAttachment> attachment;
 };
 
 } // namespace JX11Ui

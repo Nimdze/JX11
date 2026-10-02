@@ -2,8 +2,7 @@
 #include "plugin/PluginProcessor.h"
 #include "plugin/PluginEditor.h"
 
-// Regression test: JUCE's ComboBoxAttachment syncs the selection but does not
-// populate the list, so ParamChoice must add the parameter's choices itself.
+// Regression test: every choice parameter must create one button per option.
 class ChoiceControlTests : public juce::UnitTest
 {
 public:
@@ -14,7 +13,7 @@ public:
 
     void runTest() override
     {
-        beginTest ("choice parameters populate their ComboBox");
+        beginTest ("choice parameters create a button per option");
         {
             JX11AudioProcessor processor;
 
