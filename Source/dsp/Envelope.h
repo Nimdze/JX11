@@ -3,17 +3,17 @@
 
 #pragma once
 
-const float SILENCE = 0.0001f;
+inline constexpr float SILENCE = 0.0001f;
 
 class Envelope
 {
 public:
-    float attackMultiplier;
-    float decayMultiplier;
-    float sustainLevel;
-    float releaseMultiplier;
+    float attackMultiplier = 0.0f;
+    float decayMultiplier = 0.0f;
+    float sustainLevel = 0.0f;
+    float releaseMultiplier = 0.0f;
 
-    float level;
+    float level = 0.0f;
 
     float nextValue()
     {
@@ -53,6 +53,6 @@ public:
     }
 
 private:
-    float multiplier;
-    float target;
+    float multiplier = 0.0f;
+    float target = 0.0f;
 };

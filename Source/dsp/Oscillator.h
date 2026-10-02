@@ -9,7 +9,7 @@
 class Oscillator
 {
 public:
-    float amplitude;
+    float amplitude = 0.0f;
     float period = 0.0f;
     float modulation = 1.0f;
 
@@ -94,15 +94,15 @@ public:
     }
 
 private:
-    float phase;
-    float phaseMax;
-    float inc;
+    float phase = 0.0f;
+    float phaseMax = 0.0f;
+    float inc = 0.0f;
 
-    float sin0;
-    float sin1;
-    float dsin;
+    float sin0 = 0.0f;
+    float sin1 = 0.0f;
+    float dsin = 0.0f;
 
-    float dc;
+    float dc = 0.0f;
 
     /*later replace with (and only then write tests) -  The most popular methods are based on BLEP, which stands for
 BandLimited stEP function. This is an enhancement of the BLIT method you’ve used in this chapter. BLEP already does the

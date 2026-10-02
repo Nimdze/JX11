@@ -2,16 +2,26 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #pragma once
+#include <algorithm>
 #include <cmath>
 #include "common/Constants.h"
 
 class Filter
 {
 public:
-    float sampleRate;
+    float sampleRate = 44100.0f;
+
+    // Keep the bilinear transform inside its valid range: at or above Nyquist
+    // tan() goes negative and the coefficients become invalid.
+    [[nodiscard]] static float clampCutoff (float cutoff, float sampleRate) noexcept
+    {
+        return std::clamp (cutoff, kMinFilterCutoff, kMaxCutoffRatio * sampleRate);
+    }
 
     void updateCoefficients (float cutoff, float Q)
     {
+        cutoff = clampCutoff (cutoff, sampleRate);
+
         g = std::tan (PI * cutoff / sampleRate);
         k = 1.0f / Q;
         a1 = 1.0f / (1.0f + g * (g + k));
@@ -42,6 +52,6 @@ public:
     }
 
 private:
-    float g, k, a1, a2, a3; // filter coefficients
-    float ic1eq, ic2eq;     // internal state
+    float g = 0.0f, k = 0.0f, a1 = 0.0f, a2 = 0.0f, a3 = 0.0f; // filter coefficients
+    float ic1eq = 0.0f, ic2eq = 0.0f;                          // internal state
 };

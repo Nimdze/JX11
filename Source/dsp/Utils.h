@@ -7,6 +7,17 @@
 #include <cmath>
 #include <cstring>
 
+// The sample guard is a development safety net, not part of the sound. It is
+// compiled in for debug builds (and whenever JX11_ENABLE_SAMPLE_GUARD is set)
+// and omitted from release builds to avoid the per-sample branch cost.
+#ifndef JX11_ENABLE_SAMPLE_GUARD
+#if JUCE_DEBUG
+#define JX11_ENABLE_SAMPLE_GUARD 1
+#else
+#define JX11_ENABLE_SAMPLE_GUARD 0
+#endif
+#endif
+
 // clamping / silencing reason
 enum SampleGuard : unsigned
 {

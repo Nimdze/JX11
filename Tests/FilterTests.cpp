@@ -51,6 +51,27 @@ public:
 
     void runTest() override
     {
+        beginTest ("cutoff is clamped below Nyquist at low sample rates");
+        {
+            // At 32 kHz the 20 kHz request is above Nyquist; without the clamp
+            // tan() would go negative and produce invalid coefficients.
+            expectWithinAbsoluteError (Filter::clampCutoff (20000.0f, 32000.0f), 0.45f * 32000.0f, 1.0e-3f);
+            expectWithinAbsoluteError (Filter::clampCutoff (20000.0f, 44100.0f), 0.45f * 44100.0f, 1.0e-3f);
+            expectWithinAbsoluteError (Filter::clampCutoff (1000.0f, 44100.0f), 1000.0f, 1.0e-3f);
+            expectWithinAbsoluteError (Filter::clampCutoff (1.0f, 44100.0f), 20.0f, 1.0e-3f);
+
+            // The clamped coefficient must still be finite and bounded at 32 kHz.
+            auto f = makeFilter (32000.0f, 20000.0f, 0.707f);
+            float peak = 0.0f;
+            for (int i = 0; i < 4096; ++i)
+            {
+                const float y = f.render (i == 0 ? 1.0f : 0.0f);
+                expect (std::isfinite (y));
+                peak = std::max (peak, std::abs (y));
+            }
+            expect (peak < 4.0f);
+        }
+
         beginTest ("reset() produces silence");
         {
             Filter f;

@@ -25,7 +25,8 @@ SynthParams goldenParams()
     p.envDecay = 0.75f;
     p.envSustain = 1.0f;
     p.envRelease = 0.75f;
-    p.filterKeyTracking = 2.0f;
+    p.velocitySensitivity = 0.0f; // keep the cutoff from saturating at 20 kHz
+    p.filterKeyTracking = 1.0f;
     p.filterQ = 1.5f;
     p.filterEnvDepth = 1.0f;
     p.lfoInc = 0.0005f;
@@ -85,8 +86,8 @@ public:
     {
         // Captured from the reference implementation. Regenerate deliberately
         // when the DSP is intentionally changed.
-        const std::array<float, kWindows> expected{0.05838623f, 0.05454377f, 0.05561210f, 0.06790085f,
-                                                   0.06438537f, 0.07782743f, 0.07468926f, 0.08295093f};
+        const std::array<float, kWindows> expected{0.05976442f, 0.04719885f, 0.05505794f, 0.06339521f,
+                                                   0.06763877f, 0.08275422f, 0.07894021f, 0.09721437f};
 
         const auto actual = renderFingerprint();
 

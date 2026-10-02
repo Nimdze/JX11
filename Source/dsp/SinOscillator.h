@@ -9,9 +9,9 @@
 class SinOscillator
 {
 public:
-    float amplitude;
-    float inc;
-    float phase;
+    float amplitude = 0.0f;
+    float inc = 0.0f;
+    float phase = 0.0f;
 
     void reset()
     {
@@ -31,9 +31,9 @@ public:
     }
 
 private:
-    float sin0;
-    float sin1;
-    float dsin;
+    float sin0 = 0.0f;
+    float sin1 = 0.0f;
+    float dsin = 0.0f;
 };
 
 /*

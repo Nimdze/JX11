@@ -25,6 +25,13 @@ void Synth::allocateResources (double sampleRate_, int /*samplesPerBlock*/)
     }
 
     allocator.prepare (voices, &params, sampleRate);
+
+    detuneSmoother.reset (sampleRate, kParamSmoothingSeconds);
+    filterQSmoother.reset (sampleRate, kParamSmoothingSeconds);
+    detuneSmoother.setCurrentAndTargetValue (params.detune);
+    filterQSmoother.setCurrentAndTargetValue (params.filterQ);
+    smoothedDetune = params.detune;
+    smoothedFilterQ = params.filterQ;
 }
 
 void Synth::deallocateResources() {}
@@ -40,7 +47,16 @@ void Synth::reset()
 
     outputLevelSmoother.reset (sampleRate, 0.05);
 
-    filterZip = 0.0f;
+    // Start the filter modulation at its steady-state value so the first note
+    // does not sweep in from zero (the book's start-of-playback artifact).
+    filterZip = params.filterKeyTracking + midi.filterCtl;
+
+    detuneSmoother.reset (sampleRate, kParamSmoothingSeconds);
+    filterQSmoother.reset (sampleRate, kParamSmoothingSeconds);
+    detuneSmoother.setCurrentAndTargetValue (params.detune);
+    filterQSmoother.setCurrentAndTargetValue (params.filterQ);
+    smoothedDetune = params.detune;
+    smoothedFilterQ = params.filterQ;
 
     lfo.reset();
 }
@@ -60,7 +76,6 @@ void Synth::render (float** outputBuffers, int sampleCount)
         {
             updatePeriod (voice);
             voice.glideRate = params.glideRate;
-            voice.filterQ = params.filterQ * midi.resonanceCtl;
             voice.pitchBend = midi.pitchBend;
             voice.filterEnvDepth = params.filterEnvDepth;
         }
@@ -68,6 +83,9 @@ void Synth::render (float** outputBuffers, int sampleCount)
 
     for (int sample = 0; sample < sampleCount; ++sample)
     {
+        smoothedDetune = detuneSmoother.getNextValue();
+        smoothedFilterQ = filterQSmoother.getNextValue();
+
         updateLFO();
 
         const float noise = noiseGen.nextValue() * params.noiseMix;
@@ -109,9 +127,13 @@ void Synth::render (float** outputBuffers, int sampleCount)
         }
     }
 
+#if JX11_ENABLE_SAMPLE_GUARD
     guardFlags.fetch_or (protectYourEars (outputBufferLeft, sampleCount), std::memory_order_relaxed);
     if (outputBufferRight != nullptr)
         guardFlags.fetch_or (protectYourEars (outputBufferRight, sampleCount), std::memory_order_relaxed);
+#else
+    juce::ignoreUnused (outputBufferLeft, outputBufferRight);
+#endif
 }
 
 // =============================
@@ -237,6 +259,7 @@ void Synth::updateLFO()
             // if vibrato is non-negative both values will be the same and both oscillators will have vibrato,
             // if vibrato is negative then vibratoMod is 0 and only the osc2 get modulated (resulting in pwm)
 
+            voice.filterQ = smoothedFilterQ * midi.resonanceCtl;
             voice.filterMod = filterZip;
             voice.updateLFO();
             updatePeriod (voice);

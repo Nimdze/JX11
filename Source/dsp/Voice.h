@@ -11,29 +11,29 @@
 // A single voice produced by the synth (one note)
 struct Voice
 {
-    int note;
+    int note = -1;
     Oscillator osc1; // for now voice doesnt use sinOsc
     Oscillator osc2;
 
-    float period;
-    float target;
-    float glideRate;
+    float period = 0.0f;
+    float target = 0.0f;
+    float glideRate = 1.0f;
 
-    float panLeft, panRight;
+    float panLeft = 0.707f, panRight = 0.707f;
 
-    float saw;
+    float saw = 0.0f;
 
     Envelope env;
 
     Filter filter;
-    float cutoff;
-    float filterMod;
-    float filterQ;
+    float cutoff = 0.0f;
+    float filterMod = 0.0f;
+    float filterQ = 1.0f;
 
-    float pitchBend;
+    float pitchBend = 1.0f;
 
     Envelope filterEnv;
-    float filterEnvDepth;
+    float filterEnvDepth = 0.0f;
 
     void reset()
     {

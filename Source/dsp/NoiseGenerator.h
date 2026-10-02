@@ -21,5 +21,5 @@ public:
     }
 
 private:
-    unsigned int noiseSeed;
+    unsigned int noiseSeed = 22222;
 };

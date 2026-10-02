@@ -32,7 +32,26 @@ public:
     void allocateResources (double sampleRate, int samplesPerBlock);
     void deallocateResources();
     void reset();
-    void setParam (const SynthParams& value) noexcept { params = value; }
+
+    // Stores the per-block parameter snapshot. When no voice is sounding the
+    // modulation smoothers snap to the new values, so the first note does not
+    // sweep in from the previous (or a default) state.
+    void setParam (const SynthParams& value) noexcept
+    {
+        params = value;
+
+        if (!anyVoiceActive())
+        {
+            filterZip = params.filterKeyTracking + midi.filterCtl;
+            detuneSmoother.setCurrentAndTargetValue (params.detune);
+            filterQSmoother.setCurrentAndTargetValue (params.filterQ);
+        }
+        else
+        {
+            detuneSmoother.setTargetValue (params.detune);
+            filterQSmoother.setTargetValue (params.filterQ);
+        }
+    }
 
     // Audio rendering
     void render (float** outputBuffers, int sampleCount);
@@ -41,15 +60,15 @@ public:
     void midiMessage (uint8_t data0, uint8_t data1, uint8_t data2);
 
     // Guarding against ivalid samples
-    unsigned takeGuardFlags() noexcept { return guardFlags.exchange (0, std::memory_order_relaxed); }
+    [[nodiscard]] unsigned takeGuardFlags() noexcept { return guardFlags.exchange (0, std::memory_order_relaxed); }
 
-    float calcPeriod (int v, int note) const;
+    [[nodiscard]] float calcPeriod (int v, int note) const;
 
 private:
     // Synth Properties
     SynthParams params;
 
-    float sampleRate;
+    float sampleRate = 44100.0f;
     Voice voices[MAX_VOICES];
     VoiceAllocator allocator;
 
@@ -57,7 +76,22 @@ private:
 
     NoiseGenerator noiseGen;
 
+    // Filter-modulation and continuous-parameter smoothing. Advanced once per
+    // sample so host automation cannot step at block boundaries.
     float filterZip = 0.0f;
+    juce::LinearSmoothedValue<float> detuneSmoother{1.0f};
+    juce::LinearSmoothedValue<float> filterQSmoother{1.0f};
+    float smoothedDetune = 1.0f;
+    float smoothedFilterQ = 1.0f;
+
+    [[nodiscard]] bool anyVoiceActive() const noexcept
+    {
+        for (int v = 0; v < MAX_VOICES; ++v)
+            if (voices[v].env.isActive())
+                return true;
+
+        return false;
+    }
 
     void controlChange (uint8_t data1, uint8_t data2);
 
@@ -65,7 +99,7 @@ private:
     inline void updatePeriod (Voice& voice)
     {
         voice.osc1.period = voice.period * midi.pitchBend;
-        voice.osc2.period = voice.osc1.period * params.detune;
+        voice.osc2.period = voice.osc1.period * smoothedDetune;
     }
 
     // Catching invalid sample type
