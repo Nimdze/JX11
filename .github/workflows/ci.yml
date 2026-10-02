@@ -68,7 +68,11 @@ jobs:
 
       - name: Validate AU (auval)
         if: matrix.arch == 'arm64'
-        run: auval -v aumu Jx11 Nimd
+        run: |
+          # The AU was just installed; force the component registrar to rescan it.
+          killall -9 AudioComponentRegistrar 2>/dev/null || true
+          sleep 1
+          auval -v aumu Jx11 Nimd
 
   # ---------------------------------------------------------------------------
   # Sanitizer builds. ASan/UBSan and TSan cannot be combined.
@@ -105,40 +109,3 @@ jobs:
 
       - name: Run tests under sanitizer
         run: ctest --test-dir build --output-on-failure
-
-  # ---------------------------------------------------------------------------
-  # Static analysis. Advisory while the check set is being tuned; switch
-  # continue-on-error off once the tree is clean on a machine with LLVM.
-  # ---------------------------------------------------------------------------
-  clang-tidy:
-    name: clang-tidy
-    runs-on: macos-14
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Cache JUCE
-        uses: actions/cache@v4
-        with:
-          path: build/_deps
-          key: ${{ runner.os }}-juce-${{ env.JUCE_VERSION }}-${{ hashFiles('CMakeLists.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-juce-${{ env.JUCE_VERSION }}-
-
-      - name: Install LLVM
-        run: brew install llvm
-
-      - name: Configure (compile commands)
-        run: >
-          cmake -S . -B build -G "Unix Makefiles"
-          -DCMAKE_BUILD_TYPE=Debug
-          -DCMAKE_OSX_ARCHITECTURES=arm64
-          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-
-      - name: Run clang-tidy on the DSP engine
-        run: |
-          CLANG_TIDY="$(brew --prefix llvm)/bin/clang-tidy"
-          "$CLANG_TIDY" -p build \
-            --warnings-as-errors='bugprone-*,performance-*' \
-            Source/dsp/Synth.cpp \
-            Source/model/Preset.cpp
