@@ -32,28 +32,32 @@ public:
         float* outputs[2] = {left, right};
 
         Synth synth;
+        SynthParams testParams;
         const float sampleRate = 44100.0f;
 
         synth.allocateResources (sampleRate, n);
 
         // set parameters for a bare synth that doesnt have update() called
-        synth.params.tune = sampleRate * std::exp (0.05776226505f * -36.3763f); // octave 0, tuning 0
-        synth.params.detune = 1.0f;
-        synth.params.oscMix = 0.0f;
-        synth.params.volumeTrim = 0.00384f;
+        testParams.tune = sampleRate * std::exp (0.05776226505f * -36.3763f); // octave 0, tuning 0
+        testParams.detune = 1.0f;
+        testParams.oscMix = 0.0f;
+        testParams.volumeTrim = 0.00384f;
 
-        synth.params.envAttack = 0.75f; // fast
-        synth.params.envDecay = 0.75f;
-        synth.params.envSustain = 1.0f;  // hold
-        synth.params.envRelease = 0.75f; // fast (~32 samples to silence)
+        testParams.envAttack = 0.75f; // fast
+        testParams.envDecay = 0.75f;
+        testParams.envSustain = 1.0f;  // hold
+        testParams.envRelease = 0.75f; // fast (~32 samples to silence)
+
+        synth.setParam (testParams);
 
         // reset synth + zero the buffers before each test
         auto fresh = [&]
         {
             synth.reset();
-            synth.params.numVoices = 1;
-            synth.params.oscMix = 0.0f;
-            synth.params.detune = 1.0f;
+            testParams.numVoices = 1;
+            testParams.oscMix = 0.0f;
+            testParams.detune = 1.0f;
+            synth.setParam (testParams);
             (void)synth.takeGuardFlags(); // clear diagnostics
 
             std::fill (left, left + n, 0.0f);
@@ -118,8 +122,9 @@ public:
         beginTest ("period halves per octave and matches A440");
         {
             fresh();
-            synth.params.detune = 1.0f;
-            synth.params.tune = sampleRate * std::exp (0.05776226505f * -36.3763f);
+            testParams.detune = 1.0f;
+            testParams.tune = sampleRate * std::exp (0.05776226505f * -36.3763f);
+            synth.setParam (testParams);
             const float p69 = synth.calcPeriod (0, 69);
 
             expectWithinAbsoluteError (p69, sampleRate / 440.0f, 0.5f);
@@ -145,8 +150,9 @@ public:
         beginTest ("osc2 silent when oscMix is 0");
         {
             fresh();
-            synth.params.oscMix = 0.0f;
-            synth.params.detune = 1.0f;
+            testParams.oscMix = 0.0f;
+            testParams.detune = 1.0f;
+            synth.setParam (testParams);
             synth.midiMessage (0x90, 60, 100);
             synth.render (outputs, n);
             expect (!isSilent (left, n));
@@ -155,8 +161,9 @@ public:
         beginTest ("equally mixed, undetuned oscillators cancel");
         {
             fresh();
-            synth.params.oscMix = 1.0f;
-            synth.params.detune = 1.0f;
+            testParams.oscMix = 1.0f;
+            testParams.detune = 1.0f;
+            synth.setParam (testParams);
             synth.midiMessage (0x90, 60, 100);
             synth.render (outputs, n);
             expect (isSilent (left, n)); // sample1 - sample2 == 0
@@ -165,8 +172,9 @@ public:
         beginTest ("detuning prevents cancellation");
         {
             fresh();
-            synth.params.oscMix = 1.0f;
-            synth.params.detune = 0.994f;
+            testParams.oscMix = 1.0f;
+            testParams.detune = 0.994f;
+            synth.setParam (testParams);
             synth.midiMessage (0x90, 60, 100);
             synth.render (outputs, n);
             expect (!isSilent (left, n));
@@ -179,7 +187,8 @@ public:
         beginTest ("polyphony - two notes sound and are independent");
         {
             fresh();
-            synth.params.numVoices = Synth::MAX_VOICES;
+            testParams.numVoices = Synth::MAX_VOICES;
+            synth.setParam (testParams);
 
             synth.midiMessage (0x90, 60, 80);
             synth.midiMessage (0x90, 64, 80);
@@ -194,7 +203,8 @@ public:
         beginTest ("voice stealing - more notes than voices stays finite");
         {
             fresh();
-            synth.params.numVoices = Synth::MAX_VOICES;
+            testParams.numVoices = Synth::MAX_VOICES;
+            synth.setParam (testParams);
             for (int i = 0; i <= Synth::MAX_VOICES; ++i) // MAX_VOICES + 1 notes forces one voice to be stolen
                 synth.midiMessage (0x90, (uint8_t)(60 + i), 80);
 
@@ -224,7 +234,8 @@ public:
         beginTest ("all notes off silence the synth");
         {
             fresh();
-            synth.params.numVoices = Synth::MAX_VOICES;
+            testParams.numVoices = Synth::MAX_VOICES;
+            synth.setParam (testParams);
             synth.midiMessage (0x90, 60, 80);
             synth.midiMessage (0x90, 64, 80);
             synth.render (outputs, n);

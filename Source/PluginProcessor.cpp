@@ -201,13 +201,16 @@ void JX11AudioProcessor::update()
     ctx.inverseSampleRate = 1.0f / ctx.sampleRate;                                                 
     ctx.inverseUpdateRate = ctx.inverseSampleRate * LFO::MAX_STEPS;                                
                                                                                                       
-    for (int i = 0; i < Params::NumParams; ++i)                                                    
-        if (auto fn = Params::kSpecs[i].apply)                                                     
-            fn (synth.params, parameterValue (i), ctx);                                            
-                                                                                                      
-    finalizeParams (synth.params, ctx);                                                            
-                                                                                                      
-    synth.outputLevelSmoother.setTargetValue (juce::Decibels::decibelsToGain (parameterValue (Params::outputLevel))); 
+    SynthParams p;
+
+    for (int i = 0; i < Params::NumParams; ++i)
+        if (auto fn = Params::kSpecs[i].apply)
+            fn (p, parameterValue (i), ctx);
+
+    finalizeParams (p, ctx);
+    synth.setParam (p);
+
+    synth.outputLevelSmoother.setTargetValue (juce::Decibels::decibelsToGain (parameterValue (Params::outputLevel)));
 }
 
 void JX11AudioProcessor::finalizeParams (SynthParams& p, const UpdateContext& ctx) const           

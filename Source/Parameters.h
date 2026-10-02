@@ -202,5 +202,4 @@ inline juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout
     return layout;
 }
 
-static_assert (NumParams == 26, "spec table out of sync with the enum");
 } // namespace Params

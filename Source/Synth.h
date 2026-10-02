@@ -17,8 +17,6 @@ public:
     // Synth properties
     static constexpr int MAX_VOICES = SynthLimits::MAX_VOICES;
 
-    SynthParams params;
-
     juce::LinearSmoothedValue<float> outputLevelSmoother = 1.0f;
 
     float pitchBend = 1.0f;
@@ -47,6 +45,8 @@ public:
 
 private:
     // Synth Properties
+    SynthParams params;
+
     float sampleRate;
     Voice voices[MAX_VOICES];
     int lastNote;

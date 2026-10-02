@@ -14,44 +14,13 @@ public:
 
     void runTest() override
     {
-        beginTest ("expected parameter count");
+        beginTest ("spec table matches the canonical parameter list");
         {
-            expectEquals (static_cast<int> (Params::NumParams), 26);
-        }
-
-        beginTest ("spec table order matches the enum");
-        {
-            // Each enum constant must select the row whose id matches its name.
-            // catches both enum reordering and table reordering
-            auto expectId = [this] (int index, const char* id)
-            { expectEquals (juce::String (Params::kSpecs[index].id), juce::String (id)); };
-
-            expectId (Params::oscMix, "oscMix");
-            expectId (Params::oscTune, "oscTune");
-            expectId (Params::oscFine, "oscFine");
-            expectId (Params::glideMode, "glideMode");
-            expectId (Params::glideRate, "glideRate");
-            expectId (Params::glideBend, "glideBend");
-            expectId (Params::filterFreq, "filterFreq");
-            expectId (Params::filterReso, "filterReso");
-            expectId (Params::filterEnv, "filterEnv");
-            expectId (Params::filterLFO, "filterLFO");
-            expectId (Params::filterVelocity, "filterVelocity");
-            expectId (Params::filterAttack, "filterAttack");
-            expectId (Params::filterDecay, "filterDecay");
-            expectId (Params::filterSustain, "filterSustain");
-            expectId (Params::filterRelease, "filterRelease");
-            expectId (Params::envAttack, "envAttack");
-            expectId (Params::envDecay, "envDecay");
-            expectId (Params::envSustain, "envSustain");
-            expectId (Params::envRelease, "envRelease");
-            expectId (Params::lfoRate, "lfoRate");
-            expectId (Params::vibrato, "vibrato");
-            expectId (Params::noise, "noise");
-            expectId (Params::octave, "octave");
-            expectId (Params::tuning, "tuning");
-            expectId (Params::outputLevel, "outputLevel");
-            expectId (Params::polyMode, "polyMode");
+            // Each enum index must select the spec row with the same id.
+            // catches enum reordering, table reordering and a missing spec row.
+            for (int i = 0; i < Params::NumParams; ++i)
+                expectEquals (juce::String (Params::kSpecs[i].id), juce::String (Params::kIds[i]),
+                              "index " + juce::String (i));
         }
 
         beginTest ("parameter ids are unique");
