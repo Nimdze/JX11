@@ -22,6 +22,7 @@ target_sources(JX11Tests PRIVATE
     ModulationTests.cpp
     GoldenRenderTests.cpp
     ChoiceControlTests.cpp
+    SliderControlTests.cpp
 
     # The processor is the one host-facing unit the tests exercise directly.
     # It is compiled here with JX11_HEADLESS so the UI translation units are

@@ -53,11 +53,20 @@ public:
         addAndMakeVisible (name);
 
         slider.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
-        slider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 100, 20);
+
+        // Read-only value box, and don't let tab/click move keyboard focus onto
+        // the knob, so it cannot start editing a value unexpectedly.
+        slider.setTextBoxStyle (juce::Slider::TextBoxBelow, true, 100, 20);
+        slider.setWantsKeyboardFocus (false);
+        slider.setMouseClickGrabsKeyboardFocus (false);
+
         slider.setRotaryParameters (juce::degreesToRadians (225.0f), juce::degreesToRadians (495.0f), true);
         slider.setTitle (getDisplayName());
         addAndMakeVisible (slider);
     }
+
+    bool isValueEditable() const noexcept { return slider.isTextBoxEditable(); }
+    bool wantsKeyboardFocus() const noexcept { return slider.getWantsKeyboardFocus(); }
 
     void resized() override
     {
