@@ -75,6 +75,7 @@ void Synth::render (float** outputBuffers, int sampleCount)
             voice.glideRate = params.glideRate;
             voice.pitchBend = midi.pitchBend;
             voice.filterEnvDepth = params.filterEnvDepth;
+            voice.updatePanning (params.panEnabled);
         }
     }
 

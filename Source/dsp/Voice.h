@@ -17,6 +17,7 @@ struct Voice
     float glideRate = 1.0f;
 
     float panLeft = 0.707f, panRight = 0.707f;
+    float panPosition = 0.0f; // -1 (left) .. +1 (right), set at note-on
 
     float saw = 0.0f;
 
@@ -37,6 +38,7 @@ struct Voice
         note = -1;
         panLeft = 0.707f;
         panRight = 0.707f;
+        panPosition = 0.0f;
         osc1.reset();
         osc2.reset();
 
@@ -67,12 +69,24 @@ struct Voice
         filterEnv.release();
     }
 
-    void updatePanning()
+    // Position within the keyboard. Stored separately from `note` so it stays
+    // valid when a released note is parked on the SUSTAIN sentinel.
+    void setPanPosition (int midiNote)
     {
-        // setting panning according to midi note number, set for 49 keys
-        float panning = std::clamp ((static_cast<float> (note) - 60.0f) / 24.0f, -1.0f, 1.0f);
-        panLeft = std::sin ((PI / 4) * (1.0f - panning));
-        panRight = std::sin ((PI / 4) * (1.0f + panning));
+        panPosition = std::clamp ((static_cast<float> (midiNote) - 60.0f) / 24.0f, -1.0f, 1.0f);
+    }
+
+    // Constant-power pan. When disabled, every voice is centred.
+    void updatePanning (bool enabled)
+    {
+        if (!enabled)
+        {
+            panLeft = panRight = 0.707f;
+            return;
+        }
+
+        panLeft = std::sin ((PI / 4) * (1.0f - panPosition));
+        panRight = std::sin ((PI / 4) * (1.0f + panPosition));
     }
 
     void updateLFO()

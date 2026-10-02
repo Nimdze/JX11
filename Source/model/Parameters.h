@@ -31,6 +31,7 @@ struct Spec
 // Choice lists outside the table - spec trivially copyable
 inline const char* const kGlideModeChoices[] = {"Off", "Legato", "Always"};
 inline const char* const kPolyModeChoices[] = {"Mono", "Poly"};
+inline const char* const kPanningChoices[] = {"Off", "On"};
 
 //==============================================================================
 // value to text (UI thread only)
@@ -62,6 +63,11 @@ inline juce::String vibratoToText (float value, int)
 inline void applyPolyMode (SynthParams& p, float v, const UpdateContext&) noexcept
 {
     p.numVoices = (v < 0.5f) ? 1 : SynthLimits::MAX_VOICES;
+}
+
+inline void applyPanning (SynthParams& p, float v, const UpdateContext&) noexcept
+{
+    p.panEnabled = (v >= 0.5f);
 }
 
 inline void applyNoise (SynthParams& p, float v, const UpdateContext&) noexcept
@@ -215,6 +221,7 @@ inline const Spec kSpecs[NumParams] = {
     {"tuning", "Tuning", "cent", -100.0f, 100.0f, 0.1f, 1.0f, false, 0.0f, nullptr, 0, nullptr, nullptr},
     {"outputLevel", "Output Level", "dB", -24.0f, 6.0f, 0.1f, 1.0f, false, 0.0f, nullptr, 0, nullptr, nullptr},
     {"polyMode", "Polyphony", "", 0.0f, 1.0f, 1.0f, 1.0f, false, 1.0f, kPolyModeChoices, 2, nullptr, applyPolyMode},
+    {"panning", "Panning", "", 0.0f, 1.0f, 1.0f, 1.0f, false, 1.0f, kPanningChoices, 2, nullptr, applyPanning},
 };
 
 //==============================================================================

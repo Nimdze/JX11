@@ -12,6 +12,7 @@ struct SynthParams
     float oscMix = 0.0f;
     float velocitySensitivity = 1.0f;
     bool ignoreVelocity = false;
+    bool panEnabled = true;
 
     // oscillators / tuning
     float tune = 0.0f;

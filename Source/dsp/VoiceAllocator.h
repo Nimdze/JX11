@@ -103,7 +103,8 @@ private:
         lastNote = note;
 
         voice.note = note;
-        voice.updatePanning();
+        voice.setPanPosition (note);
+        voice.updatePanning (params->panEnabled);
 
         float velocity = velocityCurve (rawVelocity);
         voice.osc1.amplitude = params->volumeTrim * static_cast<float> (velocity);
@@ -159,7 +160,8 @@ private:
 
         voice.env.level += SILENCE + SILENCE;
         voice.note = note;
-        voice.updatePanning();
+        voice.setPanPosition (note);
+        voice.updatePanning (params->panEnabled);
 
         voice.cutoff = sampleRate / (period * PI);
         if (velocity > 0)

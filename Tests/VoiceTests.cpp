@@ -26,18 +26,18 @@ public:
             Voice v;
             v.reset();
 
-            v.note = 60;
-            v.updatePanning();
+            v.setPanPosition (60);
+            v.updatePanning (true);
             expectWithinAbsoluteError (v.panLeft, 0.7071f, 1.0e-3f);
             expectWithinAbsoluteError (v.panRight, 0.7071f, 1.0e-3f);
 
-            v.note = 84;
-            v.updatePanning(); // +24 semi -> hard right
+            v.setPanPosition (84);
+            v.updatePanning (true); // +24 semi -> hard right
             expectWithinAbsoluteError (v.panLeft, 0.0f, 1.0e-3f);
             expectWithinAbsoluteError (v.panRight, 1.0f, 1.0e-3f);
 
-            v.note = 36;
-            v.updatePanning(); // -24 semi ->hard left
+            v.setPanPosition (36);
+            v.updatePanning (true); // -24 semi -> hard left
             expectWithinAbsoluteError (v.panLeft, 1.0f, 1.0e-3f);
             expectWithinAbsoluteError (v.panRight, 0.0f, 1.0e-3f);
         }
@@ -47,19 +47,30 @@ public:
             Voice v;
             v.reset();
 
-            v.note = 72;
-            v.updatePanning();
+            v.setPanPosition (72);
+            v.updatePanning (true);
             expectWithinAbsoluteError (v.panLeft * v.panLeft + v.panRight * v.panRight, 1.0f, 1.0e-3f);
 
-            v.note = 127;
-            v.updatePanning(); // clamps to hard right
+            v.setPanPosition (127);
+            v.updatePanning (true); // clamps to hard right
             expectWithinAbsoluteError (v.panLeft, 0.0f, 1.0e-3f);
             expectWithinAbsoluteError (v.panRight, 1.0f, 1.0e-3f);
 
-            v.note = 0;
-            v.updatePanning(); // clamps to hard left
+            v.setPanPosition (0);
+            v.updatePanning (true); // clamps to hard left
             expectWithinAbsoluteError (v.panLeft, 1.0f, 1.0e-3f);
             expectWithinAbsoluteError (v.panRight, 0.0f, 1.0e-3f);
+        }
+
+        beginTest ("disabling panning centers every voice");
+        {
+            Voice v;
+            v.reset();
+
+            v.setPanPosition (84);
+            v.updatePanning (false);
+            expectWithinAbsoluteError (v.panLeft, 0.7071f, 1.0e-3f);
+            expectWithinAbsoluteError (v.panRight, 0.7071f, 1.0e-3f);
         }
     }
 };

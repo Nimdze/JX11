@@ -100,6 +100,14 @@ public:
             expectEquals (apply (Params::polyMode, 1.0f).numVoices, SynthLimits::MAX_VOICES);
         }
 
+        beginTest ("applyPanning maps below/above 0.5 to off/on");
+        {
+            expect (!apply (Params::panning, 0.0f).panEnabled);
+            expect (!apply (Params::panning, 0.49f).panEnabled);
+            expect (apply (Params::panning, 0.5f).panEnabled);
+            expect (apply (Params::panning, 1.0f).panEnabled);
+        }
+
         beginTest ("applyOscMix is linear 0..1");
         {
             expectWithinAbsoluteError (apply (Params::oscMix, 0.0f).oscMix, 0.0f, 1.0e-6f);
