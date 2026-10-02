@@ -23,11 +23,15 @@ target_sources(JX11Tests PRIVATE
     GoldenRenderTests.cpp
     ChoiceControlTests.cpp
     SliderControlTests.cpp
+    EditorFocusTests.cpp
 
-    # The processor is the one host-facing unit the tests exercise directly.
-    # It is compiled here with JX11_HEADLESS so the UI translation units are
-    # not pulled into the console app. The DSP/model come from JX11_engine.
+    # Host-facing and UI units the tests exercise directly. PluginProcessor.cpp
+    # is compiled with JX11_HEADLESS (createEditor() returns nullptr); the
+    # editor UI translation units are included so their controls can be tested.
+    # The DSP/model come from JX11_engine.
     ${CMAKE_SOURCE_DIR}/Source/plugin/PluginProcessor.cpp
+    ${CMAKE_SOURCE_DIR}/Source/plugin/PluginEditor.cpp
+    ${CMAKE_SOURCE_DIR}/Source/plugin/LookAndFeel.cpp
     )
 
 target_include_directories(JX11Tests PRIVATE ${CMAKE_SOURCE_DIR}/Source)

@@ -22,6 +22,11 @@ JX11AudioProcessorEditor::JX11AudioProcessorEditor (JX11AudioProcessor& p)
 {
     setLookAndFeel (&lookAndFeel);
 
+    // Don't let the editor steal keyboard focus from the host when it opens or
+    // when the user clicks in it.
+    setWantsKeyboardFocus (false);
+    setMouseClickGrabsKeyboardFocus (false);
+
     for (int i = 0; i < Params::NumParams; ++i)
     {
         // Choice parameters get a combo box, everything else a rotary knob.
@@ -39,6 +44,8 @@ JX11AudioProcessorEditor::JX11AudioProcessorEditor (JX11AudioProcessor& p)
     }
 
     midiLearnButton.setButtonText ("MIDI Learn");
+    midiLearnButton.setWantsKeyboardFocus (false);
+    midiLearnButton.setMouseClickGrabsKeyboardFocus (false);
     midiLearnButton.addListener (this);
     addAndMakeVisible (midiLearnButton);
 

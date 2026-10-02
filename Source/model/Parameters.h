@@ -221,7 +221,7 @@ inline const Spec kSpecs[NumParams] = {
     {"tuning", "Tuning", "cent", -100.0f, 100.0f, 0.1f, 1.0f, false, 0.0f, nullptr, 0, nullptr, nullptr},
     {"outputLevel", "Output Level", "dB", -24.0f, 6.0f, 0.1f, 1.0f, false, 0.0f, nullptr, 0, nullptr, nullptr},
     {"polyMode", "Polyphony", "", 0.0f, 1.0f, 1.0f, 1.0f, false, 1.0f, kPolyModeChoices, 2, nullptr, applyPolyMode},
-    {"panning", "Panning", "", 0.0f, 1.0f, 1.0f, 1.0f, false, 1.0f, kPanningChoices, 2, nullptr, applyPanning},
+    {"panning", "Key Panning", "", 0.0f, 1.0f, 1.0f, 1.0f, false, 1.0f, kPanningChoices, 2, nullptr, applyPanning},
 };
 
 //==============================================================================

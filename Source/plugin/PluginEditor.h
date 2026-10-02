@@ -31,6 +31,11 @@ public:
     {
         setTitle (Params::kSpecs[index].name);
         setExplicitFocusOrder (index + 1);
+
+        // Controls are mouse-driven; keep them out of the keyboard-focus chain
+        // so the host keeps its key shortcuts while the editor is open.
+        setWantsKeyboardFocus (false);
+        setMouseClickGrabsKeyboardFocus (false);
     }
 
     int getParamIndex() const noexcept { return paramIndex; }
