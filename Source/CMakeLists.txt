@@ -23,10 +23,13 @@ target_sources(JX11 PRIVATE
     Parameters.h
     ParameterList.h
     SynthParams.h
+    MidiState.h
+    Tuning.h
     Preset.h
     Preset.cpp
 
     Voice.h
+    VoiceAllocator.h
     Synth.h
     Synth.cpp
 

@@ -10,6 +10,8 @@
 #include "NoiseGenerator.h"
 #include "LFO.h"
 #include "SynthParams.h"
+#include "MidiState.h"
+#include "VoiceAllocator.h"
 
 class Synth
 {
@@ -19,11 +21,7 @@ public:
 
     juce::LinearSmoothedValue<float> outputLevelSmoother = 1.0f;
 
-    float pitchBend = 1.0f;
-
-    float modWheel = 0.0f;
-
-    float resonanceCtl = 1.0f;
+    MidiState midi;
 
     // Basic operations
     Synth();
@@ -49,36 +47,22 @@ private:
 
     float sampleRate;
     Voice voices[MAX_VOICES];
-    int lastNote;
-    bool sustainPedalPressed;
+    VoiceAllocator allocator;
 
     LFO lfo;
 
     NoiseGenerator noiseGen;
 
-    float pressure = 0.0f;
-    float filterCtl = 0.0f;
     float filterZip = 0.0f;
 
-    void restartMonoVoice (int note, int velocity); // Make mono legato not retrigger the envelope
-    void shiftQueuedNotes();                        // Mono legato note managment upon key release
-    int nextQueuedNote();                           // Mono legato note managment upon key release
-
-    // Voices and MIDI handeling
-    void startVoice (int v, int note, int velocity);
-    int findFreeVoice() const;
-    void noteOn (int note, int velocity);
-    void noteOff (int note);
     void controlChange (uint8_t data1, uint8_t data2);
 
     void updateLFO();
     inline void updatePeriod (Voice& voice)
     {
-        voice.osc1.period = voice.period * pitchBend;
+        voice.osc1.period = voice.period * midi.pitchBend;
         voice.osc2.period = voice.osc1.period * params.detune;
     }
-
-    bool isPlayingLegatoStyle() const;
 
     // Catching invalid sample type
     std::atomic<unsigned> guardFlags{0};

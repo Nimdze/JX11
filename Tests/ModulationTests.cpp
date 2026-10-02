@@ -20,16 +20,16 @@ public:
         beginTest ("mod wheel CC sets a parabolic depth and reseat clears it");
         {
             synth.midiMessage (0xB0, 0x01, 0);
-            expectWithinAbsoluteError (synth.modWheel, 0.0f, 1.0e06f);
+            expectWithinAbsoluteError (synth.midi.modWheel, 0.0f, 1.0e06f);
 
             synth.midiMessage (0xB0, 0x01, 127);
-            expectWithinAbsoluteError (synth.modWheel, 0.000005f * 127.0f * 127.0f, 1.0e-6f);
+            expectWithinAbsoluteError (synth.midi.modWheel, 0.000005f * 127.0f * 127.0f, 1.0e-6f);
 
             synth.midiMessage (0xB0, 0x01, 64);
-            expectWithinAbsoluteError (synth.modWheel, 0.000005f * 64.0f * 64.0f, 1.0e-6f);
+            expectWithinAbsoluteError (synth.midi.modWheel, 0.000005f * 64.0f * 64.0f, 1.0e-6f);
 
             synth.reset();
-            expectWithinAbsoluteError (synth.modWheel, 0.0f, 1.0e-6f);
+            expectWithinAbsoluteError (synth.midi.modWheel, 0.0f, 1.0e-6f);
         }
 
         beginTest ("velocity curve maps 1 - 127 to 8.9 - 137.9 and increases");

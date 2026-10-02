@@ -5,13 +5,12 @@
 #include "Voice.h"
 #include "Utils.h"
 #include "Modulation.h"
-
-static const float ANALOG = 0.002f;
-static const int SUSTAIN = -2;
+#include "Tuning.h"
 
 Synth::Synth()
 {
     sampleRate = 44100.0f;
+    allocator.prepare (voices, &params, sampleRate);
 }
 
 // =============================
@@ -25,6 +24,8 @@ void Synth::allocateResources (double sampleRate_, int /*samplesPerBlock*/)
     {
         voices[v].filter.sampleRate = sampleRate;
     }
+
+    allocator.prepare (voices, &params, sampleRate);
 }
 
 void Synth::deallocateResources() {}
@@ -34,20 +35,13 @@ void Synth::reset()
     for (int v = 0; v < MAX_VOICES; ++v)
         voices[v].reset();
 
+    allocator.reset();
     noiseGen.reset();
-    pitchBend = 1.0f;
-    sustainPedalPressed = false;
+    midi.reset();
 
     outputLevelSmoother.reset (sampleRate, 0.05);
 
-    modWheel = 0.0f;
-    lastNote = 0;
-
-    resonanceCtl = 1.0f;
-    filterCtl = 0.0f;
     filterZip = 0.0f;
-
-    pressure = 0.0f;
 
     lfo.reset();
 }
@@ -67,8 +61,8 @@ void Synth::render (float** outputBuffers, int sampleCount)
         {
             updatePeriod (voice);
             voice.glideRate = params.glideRate;
-            voice.filterQ = params.filterQ * resonanceCtl;
-            voice.pitchBend = pitchBend;
+            voice.filterQ = params.filterQ * midi.resonanceCtl;
+            voice.pitchBend = midi.pitchBend;
             voice.filterEnvDepth = params.filterEnvDepth;
         }
     }
@@ -130,7 +124,7 @@ void Synth::midiMessage (uint8_t data0, uint8_t data1, uint8_t data2)
     switch (data0 & 0xF0)
     {
         case 0x80: // Note off
-            noteOff (data1 & 0x7F);
+            allocator.noteOff (data1 & 0x7F, midi.sustainPedalPressed);
             break;
 
         case 0x90: // Note on
@@ -139,11 +133,11 @@ void Synth::midiMessage (uint8_t data0, uint8_t data1, uint8_t data2)
             uint8_t velo = data2 & 0x7F;
             if (velo > 0)
             {
-                noteOn (note, velo);
+                allocator.noteOn (note, velo);
             }
             else
             {
-                noteOff (note);
+                allocator.noteOff (note, midi.sustainPedalPressed);
             }
             break;
         }
@@ -155,7 +149,7 @@ void Synth::midiMessage (uint8_t data0, uint8_t data1, uint8_t data2)
         }
 
         case 0xD0:
-            pressure = 0.0001f * float (data1 * data1);
+            midi.pressure = 0.0001f * float (data1 * data1);
             break;
 
         case 0xE0: // Pitch bend
@@ -163,179 +157,8 @@ void Synth::midiMessage (uint8_t data0, uint8_t data1, uint8_t data2)
             // float(data1 +128 * data2 - 8192) gives anumber between -8192 and 8191
             // mapping this range to 2^(2/12) to 2^(-2/12) (multiplying the period)
             // 2^((-2*(data/8192))/12) = (2^((-2/8192)/12))^data = exp^(M*data)
-            pitchBend = std::exp (-0.000014102f * float (data1 + 128 * data2 - 8192));
+            midi.pitchBend = std::exp (-0.000014102f * float (data1 + 128 * data2 - 8192));
             break;
-        }
-    }
-}
-
-void Synth::startVoice (int v, int note, int rawVelocity)
-{
-    float period = calcPeriod (v, note);
-
-    Voice& voice = voices[v];
-    voice.target = period;
-
-    int noteDistance = 0;
-    if (lastNote > 0)
-    {
-        if ((params.glideMode == 2) || ((params.glideMode == 1) && isPlayingLegatoStyle()))
-            noteDistance = note - lastNote;
-    }
-
-    voice.period = period * std::pow (1.059463094359f, float (noteDistance) - params.glideBend);
-
-    if (voice.period < 6.0f)
-    {
-        voice.period = 6.0f;
-    }
-
-    lastNote = note;
-
-    voice.note = note;
-    voice.updatePanning();
-
-    float velocity = velocityCurve (rawVelocity);
-    voice.osc1.amplitude = params.volumeTrim * static_cast<float> (velocity);
-    // voice.osc1.reset();
-
-    voice.osc2.amplitude = voice.osc1.amplitude * params.oscMix;
-    // voice.osc2.reset();
-
-    if (params.vibrato == 0.0f && params.pwmDepth > 0.0f)
-    {
-        voice.osc2.squareWave (voice.osc1, voice.period);
-    }
-
-    voice.cutoff = sampleRate / (period * PI);
-    voice.cutoff *= std::exp (params.velocitySensitivity * float(velocity - 64));
-
-    Envelope& env = voice.env;
-    env.attackMultiplier = params.envAttack;
-    env.decayMultiplier = params.envDecay;
-    env.sustainLevel = params.envSustain;
-    env.releaseMultiplier = params.envRelease;
-    env.attack();
-
-    Envelope& filterEnv = voice.filterEnv;
-    filterEnv.attackMultiplier = params.filterAttack;
-    filterEnv.decayMultiplier = params.filterDecay;
-    filterEnv.sustainLevel = params.filterSustain;
-    filterEnv.releaseMultiplier = params.filterRelease;
-    filterEnv.attack();
-}
-
-int Synth::findFreeVoice() const
-{
-    int v = 0;
-    float l = 100.0f; // louder than any envelope
-
-    for (int i = 0; i < MAX_VOICES; ++i)
-    {
-        if (voices[i].env.level < l && !voices[i].env.isInAttack())
-        {
-            l = voices[i].env.level;
-            v = i;
-        }
-    }
-    return v;
-}
-
-// Make mono legato not retrigger the envelope
-void Synth::restartMonoVoice (int note, int velocity)
-{
-    float period = calcPeriod (0, note);
-
-    Voice& voice = voices[0];
-    voice.target = period;
-
-    if (params.glideMode == 0)
-    {
-        voice.period = period;
-    }
-
-    voice.env.level += SILENCE + SILENCE;
-    voice.note = note;
-    voice.updatePanning();
-
-    voice.cutoff = sampleRate / (period * PI);
-    if (velocity > 0)
-        voice.cutoff *= std::exp(params.velocitySensitivity * float(velocity - 64));
-}
-
-void Synth::shiftQueuedNotes()
-{
-    for (int temp = MAX_VOICES - 1; temp > 0; temp--)
-    {
-        voices[temp].note = voices[temp - 1].note;
-        voices[temp].release();
-    }
-}
-
-int Synth::nextQueuedNote()
-{
-    int held = 0;
-    for (int v = MAX_VOICES - 1; v > 0; v--)
-        if (voices[v].note > 0)
-            held = v;
-
-    if (held > 0)
-    {
-        int note = voices[held].note;
-        voices[held].note = 0;
-        return note;
-    }
-
-    return 0;
-}
-
-void Synth::noteOn (int note, int velocity)
-{
-    if (params.ignoreVelocity)
-    {
-        velocity = 80;
-    }
-
-    int v = 0; // 0 for mono
-
-    if (params.numVoices == 1) // mono
-    {
-        if (voices[0].note > 0) // legato
-        {
-            shiftQueuedNotes();
-            restartMonoVoice (note, velocity);
-            return;
-        }
-    }
-
-    else // poly
-    {
-        v = findFreeVoice();
-    }
-
-    startVoice (v, note, velocity);
-}
-
-void Synth::noteOff (int note)
-{
-    if ((params.numVoices == 1) && (voices[0].note == note))
-    {
-        int queuedNote = nextQueuedNote();
-        if (queuedNote > 0)
-            restartMonoVoice (queuedNote, -1);
-    }
-
-    for (int v = 0; v < MAX_VOICES; v++)
-    {
-        if (voices[v].note == note)
-        {
-            if (sustainPedalPressed)
-                voices[v].note = SUSTAIN;
-            else
-            {
-                voices[v].release();
-                voices[v].note = 0;
-            }
         }
     }
 }
@@ -346,59 +169,43 @@ void Synth::controlChange (uint8_t data1, uint8_t data2)
     {
         // Sustain pedal
         case 0x40:
-            sustainPedalPressed = (data2 >= 64);
+            midi.sustainPedalPressed = (data2 >= 64);
 
-            if (!sustainPedalPressed)
-                noteOff (SUSTAIN);
+            if (!midi.sustainPedalPressed)
+                allocator.noteOff (VoiceAllocator::SUSTAIN, false);
 
             break;
 
         case 0x01:
-            modWheel = modWheelDepth (data2);
+            midi.modWheel = modWheelDepth (data2);
             break;
-        
+
         case 0x47: // Resonance
-            resonanceCtl = 154.0f / float(154 - data2);
+            midi.resonanceCtl = 154.0f / float(154 - data2);
             break;
-        
+
         case 0x4A: // Filter +
-            filterCtl = 0.02f * float(data2);
+            midi.filterCtl = 0.02f * float(data2);
             break;
 
         case 0x4B: // Filter -
-            filterCtl = -0.03f * float(data2);
+            midi.filterCtl = -0.03f * float(data2);
             break;
 
         default: // panic, all notes off - 120 or above
             if (data1 >= 0X78)
             {
-                for (int v = 0; v < MAX_VOICES; ++v)
-                    voices[v].reset();
-                sustainPedalPressed = false;
+                allocator.allNotesOff();
+                midi.sustainPedalPressed = false;
             }
             break;
-            
+
     }
 }
 
 float Synth::calcPeriod (int v, int note) const
 {
-    // freq = 440 * 2^((note - 69)/12) = 440 * 2^(-69/12) * 2^(note/12)
-    // per = (sampleRate/(440 * 2^(-69/12))) * 2^(-note/12)
-    // define tune = (sampleRate/(440 * 2^(-69/12)))
-    // 2^(-note/12) = (2^(-1/12))^note = exp^(M * note)
-    // adding slight detune per voice to simulate analog synth detune
-    float period = params.tune * std::exp (-0.05776226505f * (float (note) + ANALOG * float (v)));
-
-    while (period < 6.0f || (period * params.detune) < 6.0f)
-    {
-        if (period <= 0.0f)
-            period = 6.0f;
-
-        period += period;
-    }
-
-    return period;
+    return periodForNote (params.tune, params.detune, v, note);
 }
 
 // =============================
@@ -412,10 +219,10 @@ void Synth::updateLFO()
 
     const float sine = lfo.current();
 
-    float vibratoMod = 1.0f + sine * (modWheel + params.vibrato);
-    float pwm = 1.0f + sine * (modWheel + params.pwmDepth);
+    float vibratoMod = 1.0f + sine * (midi.modWheel + params.vibrato);
+    float pwm = 1.0f + sine * (midi.modWheel + params.pwmDepth);
 
-    float filterMod = params.filterKeyTracking + filterCtl + (params.filterLFODepth + pressure) * sine;
+    float filterMod = params.filterKeyTracking + midi.filterCtl + (params.filterLFODepth + midi.pressure) * sine;
 
     filterZip += 0.005f * (filterMod - filterZip);
 
@@ -434,14 +241,4 @@ void Synth::updateLFO()
             updatePeriod (voice);
         }
     }
-}
-
-bool Synth::isPlayingLegatoStyle() const
-{
-    int held = 0;
-    for (int i = 0; i < MAX_VOICES; ++i)
-        if (voices[i].note > 0)
-            held += 1;
-
-    return held > 0;
 }

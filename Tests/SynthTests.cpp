@@ -140,11 +140,11 @@ public:
         {
             fresh();
             synth.midiMessage (0xE0, 0, 64); // centre
-            expectWithinAbsoluteError (synth.pitchBend, 1.0f, 1.0e-3f);
+            expectWithinAbsoluteError (synth.midi.pitchBend, 1.0f, 1.0e-3f);
             synth.midiMessage (0xE0, 127, 127); // max up
-            expectWithinAbsoluteError (synth.pitchBend, std::pow (2.0f, -2.0f / 12.0f), 1.0e-3f);
+            expectWithinAbsoluteError (synth.midi.pitchBend, std::pow (2.0f, -2.0f / 12.0f), 1.0e-3f);
             synth.midiMessage (0xE0, 0, 0); // max up
-            expectWithinAbsoluteError (synth.pitchBend, std::pow (2.0f, 2.0f / 12.0f), 1.0e-3f);
+            expectWithinAbsoluteError (synth.midi.pitchBend, std::pow (2.0f, 2.0f / 12.0f), 1.0e-3f);
         }
 
         beginTest ("osc2 silent when oscMix is 0");
