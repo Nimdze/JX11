@@ -112,7 +112,7 @@ public:
         synth.render (outputs, n);
         expect (!isSilent (left, n));
 
-        beginTest ("note off for a different note does'nt stop the voice");
+        beginTest ("note off for a different note doesn't stop the voice");
         fresh();
         synth.midiMessage (0x90, 60, 100);
         synth.midiMessage (0x80, 62, 0);

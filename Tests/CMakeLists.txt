@@ -5,8 +5,10 @@ juce_generate_juce_header(JX11Tests)
 target_sources(JX11Tests PRIVATE
     Main.cpp
     VoiceTests.cpp
+    VoiceAllocatorTests.cpp
     UtilsTests.cpp
     ParameterTests.cpp
+    ParameterApplyTests.cpp
     PresetTests.cpp
 
     ProcessorTests.cpp
@@ -17,6 +19,7 @@ target_sources(JX11Tests PRIVATE
     LFOTests.cpp
     FilterTests.cpp
     ModulationTests.cpp
+    GoldenRenderTests.cpp
 
     ${CMAKE_SOURCE_DIR}/Source/dsp/Synth.cpp
     ${CMAKE_SOURCE_DIR}/Source/model/Preset.cpp

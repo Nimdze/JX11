@@ -129,17 +129,23 @@ public:
             expect (stop < pass * 0.1f);
         }
 
-        beginTest ("stays finite for extreme settings");
+        beginTest ("stays finite and bounded for extreme settings");
         {
+            // Q = 50 at 20 kHz is the most resonant setting the UI allows; the
+            // response must stay bounded (the old bound of 1e4 would pass an
+            // exponential blow-up).
             auto f = makeFilter (44100.0f, 20000.0f, 50.0f);
 
+            float peak = 0.0f;
             for (int i = 0; i < 20000; ++i)
             {
                 const float y = f.render (i == 0 ? 1.0f : 0.0f);
 
                 expect (std::isfinite (y));
-                expect (std::abs (y) < 1.0e4f);
+                peak = std::max (peak, std::abs (y));
             }
+
+            expect (peak < 4.0f, "resonant filter grew past a safe bound");
         }
 
         beginTest ("rolls off at roughly 12 dB/octave");

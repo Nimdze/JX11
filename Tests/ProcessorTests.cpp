@@ -1,4 +1,5 @@
 #include <juce_core/juce_core.h>
+#include <cmath>
 #include "plugin/PluginProcessor.h"
 
 class ProcessorTests : public juce::UnitTest
@@ -195,6 +196,52 @@ public:
             expectEquals (static_cast<int> (b.getMidiLearnCC()), 0x47);
             b.setStateInformation (block.getData(), static_cast<int> (block.getSize()));
             expectEquals (static_cast<int> (b.getMidiLearnCC()), 0x2A, "learned CC restored from state");
+        }
+
+        beginTest ("processBlock renders finite audio and releases to silence");
+        {
+            JX11AudioProcessor proc;
+            proc.setRateAndBufferSizeDetails (44100.0, 512);
+            proc.prepareToPlay (44100.0, 512);
+
+            const int n = 512;
+            juce::AudioBuffer<float> buffer (2, n);
+
+            // Note on: the output must be finite and actually sounding.
+            juce::MidiBuffer noteOn;
+            noteOn.addEvent (juce::MidiMessage::noteOn (1, 60, static_cast<juce::uint8> (100)), 0);
+            buffer.clear();
+            proc.processBlock (buffer, noteOn);
+
+            float peak = 0.0f;
+            for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+            {
+                for (int i = 0; i < n; ++i)
+                {
+                    const float x = buffer.getSample (ch, i);
+                    expect (std::isfinite (x));
+                    peak = juce::jmax (peak, std::abs (x));
+                }
+            }
+            expect (peak > 1.0e-4f, "note on produced silence");
+
+            // Note off: the voice must decay back to silence without blowing up.
+            float lastPeak = peak;
+            for (int block = 0; block < 200 && lastPeak > 1.0e-4f; ++block)
+            {
+                buffer.clear();
+                juce::MidiBuffer events;
+                if (block == 0)
+                    events.addEvent (juce::MidiMessage::noteOff (1, 60), 0);
+
+                proc.processBlock (buffer, events);
+
+                lastPeak = buffer.getMagnitude (0, n);
+                expect (std::isfinite (lastPeak));
+                expect (lastPeak < 10.0f);
+            }
+
+            expect (lastPeak <= 1.0e-4f, "voice never released to silence");
         }
     }
 };

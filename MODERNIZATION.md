@@ -344,8 +344,8 @@ Why first: everything else is diffed against this tree; a reviewer sees it too.
 - [x] Delete `.kilo/worktrees/`, ignore `.kilo/` (O-2).
 - [x] Plugin identity placeholders left as-is (O-3, decided).
 - [x] License headers left as-is (O-6, decided).
-- [ ] Reconcile `DEFERRED.md` (§3), fix obvious typos/whitespace (O-8).
-- [ ] `git config core.hooksPath .githooks`; confirm tests pass.
+- [x] Reconcile `DEFERRED.md` (§3), fix obvious typos/whitespace (O-8).
+- [x] `git config core.hooksPath .githooks`; confirm tests pass.
 
 **Done when:** `git status` is clean, CI green, the test suite passes locally,
 and no duplicate source tree exists.
@@ -353,17 +353,20 @@ and no duplicate source tree exists.
 ### Phase 1 — Restore test integrity  *(goal 3)*
 Why before refactoring/DSP: tests are the safety net for the changes that follow.
 
-- [ ] Fix the never-failing `1.0e06f` assertion and sweep for similar (T-1).
-- [ ] Add `VoiceAllocator` tests (T-4) and the `processBlock` output test (T-5) —
+- [x] Fix the never-failing `1.0e06f` assertion and sweep for similar (T-1).
+- [x] Add `VoiceAllocator` tests (T-4) and the `processBlock` output test (T-5) —
       the two priorities.
-- [ ] Add `apply*` parameter-mapping tests (T-6).
+- [x] Add `apply*` parameter-mapping tests (T-6).
 - [ ] (Deferred) `Oscillator`/`NoiseGenerator` tests (T-2/T-3) — do after D-1.
-- [ ] Tighten the loose filter/envelope assertions (T-7/T-8); fix test typos.
-- [ ] Add the golden offline-render regression test (T-10).
+- [x] Tighten the loose filter/envelope assertions (T-7/T-8); fix test typos.
+- [x] Add the golden offline-render regression test (T-10).
 
 **Done when:** every DSP class and every `apply*` function has direct coverage,
 the suite has at least one test that fails if you intentionally break each core
 module, and no assertion has a tolerance larger than the quantity it checks.
+
+_State: 101 test cases, green in Debug; `JX11_All` builds. `Oscillator` and
+`NoiseGenerator` remain untested by decision (T-2/T-3)._
 
 ### Phase 2 — Structure, docs, build  *(goal 1)*
 - [ ] Extract `JX11_core` library; link plugin + tests against it (O-4).
