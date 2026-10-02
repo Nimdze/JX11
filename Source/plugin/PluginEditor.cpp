@@ -20,7 +20,8 @@ constexpr int kUtilityBarHeight = 36;
 
 //==============================================================================
 JX11AudioProcessorEditor::JX11AudioProcessorEditor (JX11AudioProcessor& p)
-    : AudioProcessorEditor (&p), audioProcessor (p)
+    : AudioProcessorEditor (&p)
+    , audioProcessor (p)
 {
     setLookAndFeel (&lookAndFeel);
 
@@ -83,9 +84,7 @@ void JX11AudioProcessorEditor::resized()
 
     for (auto* control : controls)
     {
-        control->setBounds (area.getX() + col * cellW,
-                            area.getY() + row * cellH,
-                            cellW, cellH);
+        control->setBounds (area.getX() + col * cellW, area.getY() + row * cellH, cellW, cellH);
 
         if (++col == columns)
         {
@@ -113,7 +112,7 @@ void JX11AudioProcessorEditor::buttonClicked (juce::Button* button)
 
 void JX11AudioProcessorEditor::timerCallback()
 {
-    if (! audioProcessor.isMidiLearnActive())
+    if (!audioProcessor.isMidiLearnActive())
     {
         stopTimer();
         midiLearnButton.setButtonText ("MIDI Learn");

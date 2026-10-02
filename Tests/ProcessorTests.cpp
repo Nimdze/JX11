@@ -171,7 +171,7 @@ public:
             a.prepareToPlay (44100.0, 512);
 
             expectEquals (static_cast<int> (a.getMidiLearnCC()), 0x47, "default learned CC");
-            expect (! a.isMidiLearnActive());
+            expect (!a.isMidiLearnActive());
 
             a.setMidiLearn (true);
             expect (a.isMidiLearnActive());
@@ -185,7 +185,7 @@ public:
                 a.processBlock (buffer, midi);
             }
 
-            expect (! a.isMidiLearnActive(), "learn mode ends after the first CC");
+            expect (!a.isMidiLearnActive(), "learn mode ends after the first CC");
             expectEquals (static_cast<int> (a.getMidiLearnCC()), 0x2A);
 
             // The learned CC is part of the saved state.

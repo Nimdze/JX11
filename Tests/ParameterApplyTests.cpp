@@ -9,7 +9,7 @@
 
 namespace
 {
-const UpdateContext kCtx { 44100.0f, 1.0f / 44100.0f, (1.0f / 44100.0f) * float (LFO::MAX_STEPS) };
+const UpdateContext kCtx{44100.0f, 1.0f / 44100.0f, (1.0f / 44100.0f) * float (LFO::MAX_STEPS)};
 
 // Calls a spec's apply function on a default SynthParams and returns the result.
 SynthParams apply (Params::Index index, float value)
@@ -52,8 +52,7 @@ public:
             for (int i = 0; i < Params::NumParams; ++i)
             {
                 const bool null = Params::kSpecs[i].apply == nullptr;
-                expect (null == hasNoApply (i),
-                        juce::String (Params::kIds[i]) + " apply wiring changed");
+                expect (null == hasNoApply (i), juce::String (Params::kIds[i]) + " apply wiring changed");
             }
         }
 
@@ -134,8 +133,8 @@ public:
 
         beginTest ("envelope times get shorter as the parameter rises");
         {
-            const Params::Index indices[] { Params::envAttack, Params::envDecay, Params::envRelease,
-                                            Params::filterAttack, Params::filterDecay, Params::filterRelease };
+            const Params::Index indices[]{Params::envAttack,    Params::envDecay,    Params::envRelease,
+                                          Params::filterAttack, Params::filterDecay, Params::filterRelease};
 
             // Attack/decay/release store a one-pole multiplier in [0, 1]:
             // a larger parameter means a slower stage, i.e. a multiplier closer to 1.
@@ -189,11 +188,11 @@ public:
             expectWithinAbsoluteError (off.velocitySensitivity, 0.0f, 1.0e-6f);
 
             const auto on = apply (Params::filterVelocity, 100.0f);
-            expect (! on.ignoreVelocity);
+            expect (!on.ignoreVelocity);
             expectWithinAbsoluteError (on.velocitySensitivity, 0.05f, 1.0e-6f);
 
             // -90 is not below the cutoff, so it stays enabled.
-            expect (! apply (Params::filterVelocity, -90.0f).ignoreVelocity);
+            expect (!apply (Params::filterVelocity, -90.0f).ignoreVelocity);
         }
 
         beginTest ("applyLfoRate uses the shared lfoRateHz curve");

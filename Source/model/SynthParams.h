@@ -9,43 +9,43 @@
 struct SynthParams
 {
     // master / voicing
-    int   numVoices           = 1;
-    float volumeTrim          = 1.0f;
-    float noiseMix            = 0.0f;
-    float oscMix              = 0.0f;
+    int numVoices = 1;
+    float volumeTrim = 1.0f;
+    float noiseMix = 0.0f;
+    float oscMix = 0.0f;
     float velocitySensitivity = 1.0f;
-    bool  ignoreVelocity      = false;
+    bool ignoreVelocity = false;
 
     // oscillators / tuning
-    float tune                = 0.0f;
-    float detune              = 1.0f;
+    float tune = 0.0f;
+    float detune = 1.0f;
 
     // amp envelope
-    float envAttack           = 0.0f;
-    float envDecay            = 0.0f;
-    float envSustain          = 1.0f;
-    float envRelease          = 0.0f;
+    float envAttack = 0.0f;
+    float envDecay = 0.0f;
+    float envSustain = 1.0f;
+    float envRelease = 0.0f;
 
     // glide
-    int   glideMode           = 0;
-    float glideRate           = 1.0f;
-    float glideBend           = 1.0f;
+    int glideMode = 0;
+    float glideRate = 1.0f;
+    float glideBend = 1.0f;
 
     // LFO / vibrato
-    float lfoInc              = 0.0f;
-    float vibrato             = 0.0f;
-    float pwmDepth            = 0.0f;
+    float lfoInc = 0.0f;
+    float vibrato = 0.0f;
+    float pwmDepth = 0.0f;
 
     // filter + filter envelope
-    float filterKeyTracking   = 1.0f;
-    float filterQ             = 1.0f;
-    float filterLFODepth      = 0.0f;
+    float filterKeyTracking = 1.0f;
+    float filterQ = 1.0f;
+    float filterLFODepth = 0.0f;
 
-    float filterAttack        = 0.0f;
-    float filterDecay         = 0.0f;
-    float filterSustain       = 1.0f;
-    float filterRelease       = 0.0f;
-    float filterEnvDepth      = 0.0f;
+    float filterAttack = 0.0f;
+    float filterDecay = 0.0f;
+    float filterSustain = 1.0f;
+    float filterRelease = 0.0f;
+    float filterEnvDepth = 0.0f;
 };
 
 struct UpdateContext
@@ -57,4 +57,7 @@ struct UpdateContext
 
 using ApplyFn = void (*) (SynthParams&, float value, const UpdateContext&);
 
-namespace SynthLimits { constexpr int MAX_VOICES = 8; }
+namespace SynthLimits
+{
+constexpr int MAX_VOICES = 8;
+}

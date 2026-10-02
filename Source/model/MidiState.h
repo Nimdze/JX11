@@ -8,12 +8,12 @@
 // that note handling and modulation read.
 struct MidiState
 {
-    float pitchBend           = 1.0f;
-    float modWheel            = 0.0f;
-    float resonanceCtl        = 1.0f;
-    float pressure            = 0.0f;
-    float filterCtl           = 0.0f;
-    bool  sustainPedalPressed = false;
+    float pitchBend = 1.0f;
+    float modWheel = 0.0f;
+    float resonanceCtl = 1.0f;
+    float pressure = 0.0f;
+    float filterCtl = 0.0f;
+    bool sustainPedalPressed = false;
 
     void reset() noexcept { *this = MidiState{}; }
 };

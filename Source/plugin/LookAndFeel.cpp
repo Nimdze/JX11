@@ -25,15 +25,14 @@ JX11LookAndFeel::JX11LookAndFeel()
     setColour (juce::ComboBox::outlineColourId, juce::Colour (180, 180, 180));
 }
 
-void JX11LookAndFeel::drawRotarySlider (juce::Graphics& g, int x, int y, int width, int height,
-                                        float sliderPos, float rotaryStartAngle, float rotaryEndAngle,
-                                        juce::Slider& slider)
+void JX11LookAndFeel::drawRotarySlider (juce::Graphics& g, int x, int y, int width, int height, float sliderPos,
+                                        float rotaryStartAngle, float rotaryEndAngle, juce::Slider& slider)
 {
     // Fit the largest circle that fits in the given bounds, centred.
     const float size = static_cast<float> (juce::jmin (width, height));
     const auto bounds = juce::Rectangle<float> (size, size)
-                            .withCentre ({ static_cast<float> (x) + static_cast<float> (width) * 0.5f,
-                                           static_cast<float> (y) + static_cast<float> (height) * 0.5f });
+                            .withCentre ({static_cast<float> (x) + static_cast<float> (width) * 0.5f,
+                                          static_cast<float> (y) + static_cast<float> (height) * 0.5f});
 
     const float lineW = 6.0f;
     const float arcRadius = bounds.getWidth() * 0.5f - lineW * 0.5f;
@@ -43,24 +42,22 @@ void JX11LookAndFeel::drawRotarySlider (juce::Graphics& g, int x, int y, int wid
     const juce::PathStrokeType stroke (lineW, juce::PathStrokeType::curved, juce::PathStrokeType::butt);
 
     juce::Path backgroundArc;
-    backgroundArc.addCentredArc (centre.x, centre.y, arcRadius, arcRadius, 0.0f,
-                                 rotaryStartAngle, rotaryEndAngle, true);
+    backgroundArc.addCentredArc (centre.x, centre.y, arcRadius, arcRadius, 0.0f, rotaryStartAngle, rotaryEndAngle,
+                                 true);
     g.setColour (slider.findColour (juce::Slider::rotarySliderOutlineColourId));
     g.strokePath (backgroundArc, stroke);
 
     if (slider.isEnabled())
     {
         juce::Path valueArc;
-        valueArc.addCentredArc (centre.x, centre.y, arcRadius, arcRadius, 0.0f,
-                                rotaryStartAngle, toAngle, true);
+        valueArc.addCentredArc (centre.x, centre.y, arcRadius, arcRadius, 0.0f, rotaryStartAngle, toAngle, true);
         g.setColour (slider.findColour (juce::Slider::rotarySliderFillColourId));
         g.strokePath (valueArc, stroke);
     }
 
     const float dialRadius = arcRadius - lineW;
     const float angle = toAngle - juce::MathConstants<float>::halfPi;
-    const juce::Point<float> thumb (centre.x + dialRadius * std::cos (angle),
-                                    centre.y + dialRadius * std::sin (angle));
+    const juce::Point<float> thumb (centre.x + dialRadius * std::cos (angle), centre.y + dialRadius * std::sin (angle));
 
     g.setColour (slider.findColour (juce::Slider::thumbColourId));
     g.drawLine (centre.x, centre.y, thumb.x, thumb.y, 3.0f);

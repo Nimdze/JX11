@@ -15,14 +15,12 @@
 // reorder after a release: preset values and saved plugin state are indexed by it.
 
 // The single ordered list of parameters. Add a new parameter here.
-#define JX11_PARAM_LIST(X)                                       \
-    X(oscMix)        X(oscTune)       X(oscFine)       X(glideMode)     \
-    X(glideRate)     X(glideBend)     X(filterFreq)    X(filterReso)    \
-    X(filterEnv)     X(filterLFO)     X(filterVelocity) X(filterAttack)  \
-    X(filterDecay)   X(filterSustain) X(filterRelease) X(envAttack)     \
-    X(envDecay)      X(envSustain)    X(envRelease)    X(lfoRate)       \
-    X(vibrato)       X(noise)         X(octave)        X(tuning)        \
-    X(outputLevel)   X(polyMode)
+#define JX11_PARAM_LIST(X)                                                                                             \
+    X (oscMix)                                                                                                         \
+    X (oscTune) X (oscFine) X (glideMode) X (glideRate) X (glideBend) X (filterFreq) X (filterReso) X (filterEnv)      \
+        X (filterLFO) X (filterVelocity) X (filterAttack) X (filterDecay) X (filterSustain) X (filterRelease)          \
+            X (envAttack) X (envDecay) X (envSustain) X (envRelease) X (lfoRate) X (vibrato) X (noise) X (octave)      \
+                X (tuning) X (outputLevel) X (polyMode)
 
 namespace Params
 {

@@ -28,7 +28,8 @@ namespace JX11Ui
 class ParamControl : public juce::Component
 {
 public:
-    explicit ParamControl (int index) : paramIndex (index)
+    explicit ParamControl (int index)
+        : paramIndex (index)
     {
         setTitle (Params::kSpecs[index].name);
         setExplicitFocusOrder (index + 1);
@@ -45,8 +46,8 @@ class ParamSlider : public ParamControl
 {
 public:
     ParamSlider (int index, juce::AudioProcessorValueTreeState& state)
-        : ParamControl (index),
-          attachment (state, Params::kIds[index], slider)
+        : ParamControl (index)
+        , attachment (state, Params::kIds[index], slider)
     {
         name.setText (getDisplayName(), juce::dontSendNotification);
         name.setJustificationType (juce::Justification::centred);
@@ -77,8 +78,8 @@ class ParamChoice : public ParamControl
 {
 public:
     ParamChoice (int index, juce::AudioProcessorValueTreeState& state)
-        : ParamControl (index),
-          attachment (state, Params::kIds[index], combo)
+        : ParamControl (index)
+        , attachment (state, Params::kIds[index], combo)
     {
         name.setText (getDisplayName(), juce::dontSendNotification);
         name.setJustificationType (juce::Justification::centred);
@@ -105,9 +106,7 @@ private:
 } // namespace JX11Ui
 
 //==============================================================================
-class JX11AudioProcessorEditor : public juce::AudioProcessorEditor,
-                                 private juce::Button::Listener,
-                                 private juce::Timer
+class JX11AudioProcessorEditor : public juce::AudioProcessorEditor, private juce::Button::Listener, private juce::Timer
 {
 public:
     JX11AudioProcessorEditor (JX11AudioProcessor&);

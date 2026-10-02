@@ -45,8 +45,8 @@ public:
             env.reset();
 
             expectEquals (env.level, 0.0f);
-            expect (! env.isActive());
-            expect (! env.isInAttack());
+            expect (!env.isActive());
+            expect (!env.isInAttack());
         }
 
         beginTest ("attack() activates and level rises monotonically");
@@ -65,7 +65,7 @@ public:
                 previous = v;
             }
 
-            expect (! env.isInAttack(), "attack never handed over to decay");
+            expect (!env.isInAttack(), "attack never handed over to decay");
         }
 
         beginTest ("attack hands over to decay and settles at sustain");
@@ -99,13 +99,13 @@ public:
             expect (env.isActive());
 
             env.release();
-            expect (! env.isInAttack());
+            expect (!env.isInAttack());
 
             int guard = 0;
             while (env.isActive() && guard++ < 10000)
                 env.nextValue();
 
-            expect (! env.isActive());
+            expect (!env.isActive());
         }
 
         beginTest ("attack() continues from the current level (legato)");
@@ -137,7 +137,7 @@ public:
             env.release();
             env.nextValue();
 
-            expect (! env.isActive());
+            expect (!env.isActive());
             expectEquals (env.level, 0.0f);
         }
     }
