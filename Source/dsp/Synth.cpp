@@ -156,7 +156,7 @@ void Synth::midiMessage (uint8_t data0, uint8_t data1, uint8_t data2)
             // float(data1 +128 * data2 - 8192) gives anumber between -8192 and 8191
             // mapping this range to 2^(2/12) to 2^(-2/12) (multiplying the period)
             // 2^((-2*(data/8192))/12) = (2^((-2/8192)/12))^data = exp^(M*data)
-            midi.pitchBend = std::exp (-0.000014102f * float (data1 + 128 * data2 - 8192));
+            midi.pitchBend = std::exp (-kPitchBendRate * float (data1 + 128 * data2 - 8192));
             break;
         }
     }
@@ -180,11 +180,11 @@ void Synth::controlChange (uint8_t data1, uint8_t data2)
             break;
 
         case 0x4A: // Filter +
-            midi.filterCtl = 0.02f * float(data2);
+            midi.filterCtl = 0.02f * float (data2);
             break;
 
         case 0x4B: // Filter -
-            midi.filterCtl = -0.03f * float(data2);
+            midi.filterCtl = -0.03f * float (data2);
             break;
 
         default: // panic, all notes off - 120 or above
@@ -194,7 +194,6 @@ void Synth::controlChange (uint8_t data1, uint8_t data2)
                 midi.sustainPedalPressed = false;
             }
             break;
-
     }
 
     // Resonance is a learnable CC, so it cannot be a switch case (case labels
@@ -226,7 +225,7 @@ void Synth::updateLFO()
 
     float filterMod = params.filterKeyTracking + midi.filterCtl + (params.filterLFODepth + midi.pressure) * sine;
 
-    filterZip += 0.005f * (filterMod - filterZip);
+    filterZip += kFilterModSmoothing * (filterMod - filterZip);
 
     for (int v = 0; v < MAX_VOICES; ++v)
     {

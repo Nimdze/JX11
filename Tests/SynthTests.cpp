@@ -38,7 +38,7 @@ public:
         synth.allocateResources (sampleRate, n);
 
         // set parameters for a bare synth that doesnt have update() called
-        testParams.tune = sampleRate * std::exp (0.05776226505f * -36.3763f); // octave 0, tuning 0
+        testParams.tune = sampleRate * std::exp (kSemitoneLog * -36.3763f); // octave 0, tuning 0
         testParams.detune = 1.0f;
         testParams.oscMix = 0.0f;
         testParams.volumeTrim = 0.00384f;
@@ -123,7 +123,7 @@ public:
         {
             fresh();
             testParams.detune = 1.0f;
-            testParams.tune = sampleRate * std::exp (0.05776226505f * -36.3763f);
+            testParams.tune = sampleRate * std::exp (kSemitoneLog * -36.3763f);
             synth.setParam (testParams);
             const float p69 = synth.calcPeriod (0, 69);
 

@@ -3,6 +3,7 @@
 
 #pragma once
 #include <cmath>
+#include "common/Constants.h"
 
 // Velocity curve - midi mapped from 1-127 to around 8.9-137.9
 inline float velocityCurve (int velocity)
@@ -45,12 +46,12 @@ inline float periodForNote (float tune, float detune, int voice, int note) noexc
     // per = (sampleRate/(440 * 2^(-69/12))) * 2^(-note/12)
     // define tune = (sampleRate/(440 * 2^(-69/12)))
     // 2^(-note/12) = (2^(-1/12))^note = exp^(M * note)
-    float period = tune * std::exp (-0.05776226505f * (float (note) + ANALOG * float (voice)));
+    float period = tune * std::exp (-kSemitoneLog * (float (note) + ANALOG * float (voice)));
 
-    while (period < 6.0f || (period * detune) < 6.0f)
+    while (period < kMinPeriodSamples || (period * detune) < kMinPeriodSamples)
     {
         if (period <= 0.0f)
-            period = 6.0f;
+            period = kMinPeriodSamples;
 
         period += period;
     }

@@ -98,10 +98,10 @@ private:
                 noteDistance = note - lastNote;
         }
 
-        voice.period = period * std::pow (1.059463094359f, float (noteDistance) - params->glideBend);
+        voice.period = period * std::pow (kSemitoneRatio, float (noteDistance) - params->glideBend);
 
-        if (voice.period < 6.0f)
-            voice.period = 6.0f;
+        if (voice.period < kMinPeriodSamples)
+            voice.period = kMinPeriodSamples;
 
         lastNote = note;
 

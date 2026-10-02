@@ -10,7 +10,7 @@
 namespace
 {
 const float kSampleRate = 44100.0f;
-const float kTune = kSampleRate * std::exp (0.05776226505f * -36.3763f);
+const float kTune = kSampleRate * std::exp (kSemitoneLog * -36.3763f);
 
 // Allocator under test plus its voice storage, reset to a clean state.
 struct Fixture
@@ -30,8 +30,8 @@ struct Fixture
 
     int activeVoices() const
     {
-        return static_cast<int> (std::count_if (std::begin (voices), std::end (voices),
-                                                [] (const Voice& v) { return v.note > 0; }));
+        return static_cast<int> (
+            std::count_if (std::begin (voices), std::end (voices), [] (const Voice& v) { return v.note > 0; }));
     }
 
     SynthParams params;
@@ -72,8 +72,8 @@ public:
 
             f.allocator.noteOff (60, false);
 
-            expectEquals (f.voices[0].note, 0);   // released
-            expectEquals (f.voices[1].note, 64);  // still held
+            expectEquals (f.voices[0].note, 0);  // released
+            expectEquals (f.voices[1].note, 64); // still held
             expectEquals (f.activeVoices(), 1);
         }
 
@@ -85,11 +85,11 @@ public:
             expectEquals (f.voices[0].note, 60);
 
             f.allocator.noteOn (64, 80);
-            expectEquals (f.voices[0].note, 64);  // playing voice moves
-            expectEquals (f.voices[1].note, 60);  // previous note queued
+            expectEquals (f.voices[0].note, 64); // playing voice moves
+            expectEquals (f.voices[1].note, 60); // previous note queued
 
             f.allocator.noteOff (64, false);
-            expectEquals (f.voices[0].note, 60);  // falls back to queued note
+            expectEquals (f.voices[0].note, 60); // falls back to queued note
         }
 
         beginTest ("mono legato queue handles three overlapping notes");
@@ -101,11 +101,11 @@ public:
             f.allocator.noteOn (67, 80);
 
             expectEquals (f.voices[0].note, 67);
-            expectEquals (f.voices[1].note, 64);  // queue is most-recent-first
+            expectEquals (f.voices[1].note, 64); // queue is most-recent-first
             expectEquals (f.voices[2].note, 60);
 
             f.allocator.noteOff (67, false);
-            expectEquals (f.voices[0].note, 64);  // most recent queued note first
+            expectEquals (f.voices[0].note, 64); // most recent queued note first
         }
 
         beginTest ("sustain pedal parks the note on the SUSTAIN sentinel");
@@ -113,9 +113,9 @@ public:
             Fixture f (SynthLimits::MAX_VOICES);
 
             f.allocator.noteOn (60, 80);
-            f.allocator.noteOff (60, true);  // key up, pedal down
+            f.allocator.noteOff (60, true); // key up, pedal down
             expectEquals (f.voices[0].note, VoiceAllocator::SUSTAIN);
-            expectEquals (f.activeVoices(), 0);  // sentinel is not a held note
+            expectEquals (f.activeVoices(), 0); // sentinel is not a held note
 
             // Lifting the pedal releases everything on the sentinel.
             f.allocator.noteOff (VoiceAllocator::SUSTAIN, false);

@@ -222,10 +222,10 @@ void JX11AudioProcessor::render (juce::AudioBuffer<float>& buffer, int sampleCou
 
 void JX11AudioProcessor::update()
 {
-    UpdateContext ctx { static_cast<float> (getSampleRate()), 0.0f, 0.0f };                        
-    ctx.inverseSampleRate = 1.0f / ctx.sampleRate;                                                 
-    ctx.inverseUpdateRate = ctx.inverseSampleRate * LFO::MAX_STEPS;                                
-                                                                                                      
+    UpdateContext ctx{static_cast<float> (getSampleRate()), 0.0f, 0.0f};
+    ctx.inverseSampleRate = 1.0f / ctx.sampleRate;
+    ctx.inverseUpdateRate = ctx.inverseSampleRate * LFO::MAX_STEPS;
+
     SynthParams p;
 
     for (int i = 0; i < Params::NumParams; ++i)
@@ -238,20 +238,21 @@ void JX11AudioProcessor::update()
     synth.outputLevelSmoother.setTargetValue (juce::Decibels::decibelsToGain (parameterValue (Params::outputLevel)));
 }
 
-void JX11AudioProcessor::finalizeParams (SynthParams& p, const UpdateContext& ctx) const           
-{                                                                                                  
-    // oscMix + noise + filterReso -> volumeTrim                                                   
-    const float filterReso = parameterValue (Params::filterReso) / 100.0f;                         
-    p.volumeTrim = 0.0008f * (3.2f - p.oscMix - 25.0f * p.noiseMix) * (1.5f - 0.5f * filterReso);  
-                                                                                                      
-    // octave + tuning -> tune                                                                     
-    const float tuneInSemi = -36.3763f - 12.0f * parameterValue (Params::octave) - parameterValue (Params::tuning) / 100.0f;
-    p.tune = ctx.sampleRate * std::exp (0.05776226505f * tuneInSemi);                              
-                                                                                                      
-    // oscTune + oscFine -> detune                                                                 
-    const float semi = parameterValue (Params::oscTune);                                           
-    const float cent = parameterValue (Params::oscFine);                                           
-    p.detune = std::pow (1.059463094359f, -semi - 0.01f * cent);                                   
+void JX11AudioProcessor::finalizeParams (SynthParams& p, const UpdateContext& ctx) const
+{
+    // oscMix + noise + filterReso -> volumeTrim
+    const float filterReso = parameterValue (Params::filterReso) / 100.0f;
+    p.volumeTrim = 0.0008f * (3.2f - p.oscMix - 25.0f * p.noiseMix) * (1.5f - 0.5f * filterReso);
+
+    // octave + tuning -> tune
+    const float tuneInSemi =
+        -36.3763f - 12.0f * parameterValue (Params::octave) - parameterValue (Params::tuning) / 100.0f;
+    p.tune = ctx.sampleRate * std::exp (kSemitoneLog * tuneInSemi);
+
+    // oscTune + oscFine -> detune
+    const float semi = parameterValue (Params::oscTune);
+    const float cent = parameterValue (Params::oscFine);
+    p.detune = std::pow (kSemitoneRatio, -semi - 0.01f * cent);
 }
 
 //==============================================================================
@@ -404,7 +405,7 @@ void JX11AudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     std::unique_ptr<juce::XmlElement> xml (getXmlFromBinary (data, sizeInBytes));
 
-    if (xml == nullptr || ! xml->hasTagName (pluginTag))
+    if (xml == nullptr || !xml->hasTagName (pluginTag))
         return;
 
     if (auto* parametersXML = xml->getChildByName (apvts.state.getType()))

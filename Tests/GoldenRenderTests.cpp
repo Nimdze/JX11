@@ -7,7 +7,7 @@
 
 namespace
 {
-constexpr int kBlockSize = 4800;   // ~109 ms at 44.1 kHz
+constexpr int kBlockSize = 4800; // ~109 ms at 44.1 kHz
 constexpr int kWindows = 8;
 constexpr int kWindowSize = kBlockSize / kWindows;
 
@@ -16,7 +16,7 @@ constexpr int kWindowSize = kBlockSize / kWindows;
 SynthParams goldenParams()
 {
     SynthParams p;
-    p.tune = 44100.0f * std::exp (0.05776226505f * -36.3763f);
+    p.tune = 44100.0f * std::exp (kSemitoneLog * -36.3763f);
     p.detune = 0.994f;
     p.oscMix = 0.5f;
     p.volumeTrim = 0.00384f;
@@ -40,7 +40,7 @@ std::array<float, kWindows> renderFingerprint()
     static Synth synth;
     static bool prepared = false;
 
-    if (! prepared)
+    if (!prepared)
     {
         synth.allocateResources (44100.0, kBlockSize);
         prepared = true;
@@ -49,14 +49,14 @@ std::array<float, kWindows> renderFingerprint()
     synth.reset();
     synth.setParam (goldenParams());
 
-    float left[kBlockSize] {};
-    float right[kBlockSize] {};
+    float left[kBlockSize]{};
+    float right[kBlockSize]{};
     float* outputs[2] = {left, right};
 
     synth.midiMessage (0x90, 60, 100);
     synth.render (outputs, kBlockSize);
 
-    std::array<float, kWindows> rms {};
+    std::array<float, kWindows> rms{};
 
     for (int w = 0; w < kWindows; ++w)
     {
@@ -85,10 +85,8 @@ public:
     {
         // Captured from the reference implementation. Regenerate deliberately
         // when the DSP is intentionally changed.
-        const std::array<float, kWindows> expected {
-            0.05838623f, 0.05454377f, 0.05561210f, 0.06790085f,
-            0.06438537f, 0.07782743f, 0.07468926f, 0.08295093f
-        };
+        const std::array<float, kWindows> expected{0.05838623f, 0.05454377f, 0.05561210f, 0.06790085f,
+                                                   0.06438537f, 0.07782743f, 0.07468926f, 0.08295093f};
 
         const auto actual = renderFingerprint();
 
@@ -108,8 +106,7 @@ public:
                 const float a = actual[static_cast<std::size_t> (w)];
 
                 expectWithinAbsoluteError (a, e, juce::jmax (1.0e-4f, 0.01f * e),
-                                           "window " + juce::String (w) + " (actual " +
-                                           juce::String (a, 8) + ")");
+                                           "window " + juce::String (w) + " (actual " + juce::String (a, 8) + ")");
             }
         }
     }

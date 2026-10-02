@@ -55,17 +55,17 @@ struct Voice
     {
         float sample1 = osc1.nextSample();
         float sample2 = osc2.nextSample();
-        saw = saw * 0.997f + sample1 - sample2;
+        saw = saw * kSawLeak + sample1 - sample2;
 
         float output = saw + input;
-        output = filter.render(output);
+        output = filter.render (output);
 
         float envelope = env.nextValue();
         return output * envelope;
     }
 
-    void release() 
-    { 
+    void release()
+    {
         env.release();
         filterEnv.release();
     }
@@ -78,13 +78,13 @@ struct Voice
         panRight = std::sin ((PI / 4) * (1.0f + panning));
     }
 
-    void updateLFO() 
-    { 
+    void updateLFO()
+    {
         period += glideRate * (target - period);
-        
+
         float fenv = filterEnv.nextValue();
-        float modulatedCutoff = cutoff * std::exp(filterMod + filterEnvDepth * fenv) / pitchBend;
-        modulatedCutoff = std::clamp(modulatedCutoff, 30.0f, 20000.0f);
-        filter.updateCoefficients(modulatedCutoff, filterQ);
+        float modulatedCutoff = cutoff * std::exp (filterMod + filterEnvDepth * fenv) / pitchBend;
+        modulatedCutoff = std::clamp (modulatedCutoff, 30.0f, 20000.0f);
+        filter.updateCoefficients (modulatedCutoff, filterQ);
     }
 };
