@@ -404,13 +404,21 @@ fingerprint regenerated for the filter-sensitive patch and re-validated. ASan/UB
 in CI still pending Phase 4._
 
 ### Phase 4 — CI / tooling elevation  *(goals 1–3)*
-- [ ] CI matrix: Debug + Release, arm64 + x86_64, macOS (+ Linux if easy).
-- [ ] ASan/UBSan in CI; add a TSan job.
-- [ ] Cache the JUCE `_deps` download; run `pluginval` at strictness 10 + `auval`.
-- [ ] Add `clang-tidy` with a curated `.clang-tidy`; fail on new warnings.
+- [x] CI matrix: Debug + Release, arm64 + x86_64. (macOS only; Linux not added.)
+- [x] ASan/UBSan and TSan CI jobs; both verified locally clean.
+- [x] Cache the JUCE `_deps` download; run `pluginval` at strictness 10 + `auval`.
+      (pluginval runs with `--skip-gui-tests`; `auval` verified locally.)
+- [x] Add a curated `.clang-tidy` and a clang-tidy CI job. The job is advisory
+      (`continue-on-error`) until the check set is tuned on a machine with LLVM.
+- [x] `JX11_SANITIZERS` CMake option so CI and contributors build them the same way.
 
 **Done when:** a clean clone gets a green badge with sanitizers, pluginval, and
 auval all gating.
+
+_State: three build legs, two sanitizer legs, and an advisory lint leg. Sanitizers
+and `auval` were run locally and are clean; pluginval must be confirmed on the next
+CI run (not installed locally). Remove `continue-on-error` from the clang-tidy job
+once tuned._
 
 ### Phase 5 — DSP modernization  *(goal 4, optional)*
 - [ ] BLEP oscillator + aliasing test (D-1).
