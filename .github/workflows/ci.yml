@@ -54,7 +54,9 @@ jobs:
       # auval/pluginval load a native binary, so only validate the arm64 build.
       - name: Install pluginval
         if: matrix.arch == 'arm64'
-        run: brew install --cask --no-quarantine pluginval
+        run: |
+          brew install --cask pluginval
+          xattr -dr com.apple.quarantine /Applications/pluginval.app || true
 
       - name: Validate VST3 (pluginval, strictness 10)
         if: matrix.arch == 'arm64'
