@@ -14,6 +14,8 @@ target_sources(JX11Tests PRIVATE
     ProcessorTests.cpp
     SynthTests.cpp
     SinOscillatorTests.cpp
+    OscillatorTests.cpp
+    NoiseGeneratorTests.cpp
 
     EnvelopeTests.cpp
     LFOTests.cpp

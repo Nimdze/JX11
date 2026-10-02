@@ -104,8 +104,7 @@ private:
 
     float dc = 0.0f;
 
-    /*later replace with (and only then write tests) -  The most popular methods are based on BLEP, which stands for
-BandLimited stEP function. This is an enhancement of the BLIT method you’ve used in this chapter. BLEP already does the
-integration ahead of time. There are a few different variations of BLEP. If you’re up for some homework, google
-“MinBLEP” or “PolyBLEP” and see if you can implement these algorithms in the Oscillator class*/
+    // Band-limited impulse train (BLIT) sawtooth from the book. A BLEP
+    // oscillator would alias less at high pitches; that redesign is
+    // intentionally not part of JX11.5 (see MODERNIZATION.md, D-1).
 };
