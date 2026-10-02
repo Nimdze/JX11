@@ -23,6 +23,10 @@ public:
 
     MidiState midi;
 
+    // MIDI CC number that extra filter resonance is mapped to. Changed by MIDI
+    // Learn; written on the audio thread from a copy published by the processor.
+    uint8_t resoCC = 0x47;
+
     // Basic operations
     Synth();
     void allocateResources (double sampleRate, int samplesPerBlock);

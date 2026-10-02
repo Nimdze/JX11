@@ -68,6 +68,12 @@ public:
 
     juce::AudioProcessorValueTreeState apvts{*this, nullptr, "Parameters", Params::createParameterLayout()};
 
+    // MIDI Learn. The editor calls setMidiLearn(true) from the message thread;
+    // handleMIDI clears it on the audio thread once a CC is captured.
+    void setMidiLearn (bool shouldLearn) noexcept { midiLearn.store (shouldLearn, std::memory_order_relaxed); }
+    bool isMidiLearnActive() const noexcept { return midiLearn.load (std::memory_order_relaxed); }
+    uint8_t getMidiLearnCC() const noexcept { return midiLearnCC.load (std::memory_order_relaxed); }
+
 private:
     //==============================================================================
     // Parameter Plumbing - audio thread reads paramValues
@@ -105,6 +111,12 @@ private:
     std::atomic<int> pendingProgram{-1};
     std::atomic<bool> resetRequested{false};
     std::atomic<float> pendingOutputLevel{-1.0f};
+
+    // MIDI Learn handshake. midiLearnCC is written by handleMIDI (audio thread)
+    // and read by get/setStateInformation (any thread); processBlock publishes
+    // it into the audio-thread-only Synth::resoCC.
+    std::atomic<bool> midiLearn{false};
+    std::atomic<uint8_t> midiLearnCC{0x47};
 
     void valueTreePropertyChanged (juce::ValueTree&, const juce::Identifier&) override
     {

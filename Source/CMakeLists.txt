@@ -17,6 +17,8 @@ target_sources(JX11 PRIVATE
     plugin/PluginProcessor.h
     plugin/PluginEditor.cpp
     plugin/PluginEditor.h
+    plugin/LookAndFeel.cpp
+    plugin/LookAndFeel.h
 
     common/Constants.h
     common/Modulation.h

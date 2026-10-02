@@ -163,6 +163,39 @@ public:
             expectWithinAbsoluteError (b.apvts.getParameter (Params::kSpecs[Params::filterFreq].id)->getValue(), before,
                                        1.0e-4f);
         }
+
+        beginTest ("MIDI Learn captures the first CC and it survives a state round trip");
+        {
+            JX11AudioProcessor a;
+            a.prepareToPlay (44100.0, 512);
+
+            expectEquals (static_cast<int> (a.getMidiLearnCC()), 0x47, "default learned CC");
+            expect (! a.isMidiLearnActive());
+
+            a.setMidiLearn (true);
+            expect (a.isMidiLearnActive());
+
+            // A CC on any channel is captured, ignoring the channel.
+            {
+                juce::AudioBuffer<float> buffer (2, 512);
+                buffer.clear();
+                juce::MidiBuffer midi;
+                midi.addEvent (juce::MidiMessage::controllerEvent (1, 0x2A, 64), 0);
+                a.processBlock (buffer, midi);
+            }
+
+            expect (! a.isMidiLearnActive(), "learn mode ends after the first CC");
+            expectEquals (static_cast<int> (a.getMidiLearnCC()), 0x2A);
+
+            // The learned CC is part of the saved state.
+            juce::MemoryBlock block;
+            a.getStateInformation (block);
+
+            JX11AudioProcessor b;
+            expectEquals (static_cast<int> (b.getMidiLearnCC()), 0x47);
+            b.setStateInformation (block.getData(), static_cast<int> (block.getSize()));
+            expectEquals (static_cast<int> (b.getMidiLearnCC()), 0x2A, "learned CC restored from state");
+        }
     }
 };
 

@@ -35,6 +35,7 @@ JUCE parameter objects.
 ### Message thread only
 
 - `plugin/PluginEditor.*` — the UI.
+- `plugin/LookAndFeel.*` — the editor-scoped look-and-feel (styling only).
 - `model/Preset.*` — the factory bank, built once in the processor constructor.
 
 ### Both / boundary
@@ -43,6 +44,9 @@ JUCE parameter objects.
   `timerCallback`, `setCurrentProgram`, and get/setState are message-thread.
   Cross-thread communication is only through the atomics in the
   "Cross-thread handshakes" section of `PluginProcessor.h`, plus the APVTS.
+  This includes the MIDI Learn handshake (`midiLearn` / `midiLearnCC`): the
+  editor sets `midiLearn`, `handleMIDI` captures a CC and clears it, and
+  `processBlock` publishes the learned CC into the audio-only `Synth::resoCC`.
 - `model/Parameters.h` — `createParameterLayout()` runs at construction
   (message thread); the `apply*` functions run on the audio thread from
   `PluginProcessor::update()` (once per block).

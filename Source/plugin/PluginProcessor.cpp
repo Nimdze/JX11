@@ -17,9 +17,21 @@
 */
 
 #include "plugin/PluginProcessor.h"
+#ifndef JX11_HEADLESS
+#include "plugin/PluginEditor.h"
+#endif
 #include "model/Parameters.h"
 #include "dsp/Utils.h"
 #include "common/Modulation.h"
+
+namespace
+{
+// Top-level state tags written by getStateInformation / read by
+// setStateInformation.
+const juce::Identifier pluginTag = "PLUGIN";
+const juce::Identifier extraTag = "EXTRA";
+const juce::Identifier midiCCAttribute = "midiCC";
+} // namespace
 
 //==============================================================================
 
@@ -72,6 +84,7 @@ void JX11AudioProcessor::releaseResources()
 void JX11AudioProcessor::reset()
 {
     synth.reset();
+    midiLearn.store (false, std::memory_order_relaxed);
     synth.outputLevelSmoother.setCurrentAndTargetValue (
         juce::Decibels::decibelsToGain (parameterValue (Params::outputLevel)));
 }
@@ -112,6 +125,9 @@ void JX11AudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::M
 
     if (resetRequested.exchange (false, std::memory_order_relaxed))
         synth.reset();
+
+    // Publish the learned resonance CC to the audio-thread-only Synth copy.
+    synth.resoCC = midiLearnCC.load (std::memory_order_relaxed);
 
     auto totalNumInputChannels = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
@@ -166,6 +182,15 @@ void JX11AudioProcessor::splitBufferByEvents (juce::AudioBuffer<float>& buffer, 
 
 void JX11AudioProcessor::handleMIDI (uint8_t data0, uint8_t data1, uint8_t data2)
 {
+    // MIDI Learn: while active, the next CC message is captured (ignoring the
+    // channel) and from then on drives filter resonance via Synth::resoCC.
+    if (midiLearn.load (std::memory_order_relaxed) && (data0 & 0xF0) == 0xB0)
+    {
+        midiLearnCC.store (data1, std::memory_order_relaxed);
+        midiLearn.store (false, std::memory_order_relaxed);
+        return;
+    }
+
     if ((data0 & 0xF0) == 0xB0)
     {
         if (data1 == 0x07) // volume
@@ -307,11 +332,13 @@ bool JX11AudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* JX11AudioProcessor::createEditor()
 {
-    // Generic UI while the synth/parameters are in development.
-    // JX11AudioProcessorEditor becomes the real UI in the book's "User interface" chapter.
-    auto editor = new juce::GenericAudioProcessorEditor (*this);
-    editor->setSize (500, 750);
-    return editor;
+#ifdef JX11_HEADLESS
+    // The test binary links the processor but never opens an editor, so it
+    // builds without the UI translation units.
+    return nullptr;
+#else
+    return new JX11AudioProcessorEditor (*this);
+#endif
 }
 
 //==============================================================================
@@ -360,17 +387,38 @@ void JX11AudioProcessor::changeProgramName (int index, const juce::String& newNa
 
 void JX11AudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    copyXmlToBinary (*apvts.copyState().createXml(), destData);
+    auto xml = std::make_unique<juce::XmlElement> (pluginTag);
+
+    // All APVTS parameters live one level down, under <Parameters>.
+    xml->addChildElement (apvts.copyState().createXml().release());
+
+    // Non-parameter state that should survive a save/load: the learned CC.
+    auto extraXML = std::make_unique<juce::XmlElement> (extraTag);
+    extraXML->setAttribute (midiCCAttribute, static_cast<int> (midiLearnCC.load (std::memory_order_relaxed)));
+    xml->addChildElement (extraXML.release());
+
+    copyXmlToBinary (*xml, destData);
 }
 
 void JX11AudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     std::unique_ptr<juce::XmlElement> xml (getXmlFromBinary (data, sizeInBytes));
-    if (xml.get() != nullptr && xml->hasTagName (apvts.state.getType()))
+
+    if (xml == nullptr || ! xml->hasTagName (pluginTag))
+        return;
+
+    if (auto* parametersXML = xml->getChildByName (apvts.state.getType()))
     {
-        apvts.replaceState (juce::ValueTree::fromXml (*xml));
+        apvts.replaceState (juce::ValueTree::fromXml (*parametersXML));
         parametersChanged.store (true);
         resetRequested.store (true, std::memory_order_relaxed);
+    }
+
+    if (auto* extraXML = xml->getChildByName (extraTag))
+    {
+        const int cc = extraXML->getIntAttribute (midiCCAttribute);
+        if (cc > 0)
+            midiLearnCC.store (static_cast<uint8_t> (cc), std::memory_order_relaxed);
     }
 }
 

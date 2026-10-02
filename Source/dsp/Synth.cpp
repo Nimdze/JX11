@@ -179,10 +179,6 @@ void Synth::controlChange (uint8_t data1, uint8_t data2)
             midi.modWheel = modWheelDepth (data2);
             break;
 
-        case 0x47: // Resonance
-            midi.resonanceCtl = 154.0f / float(154 - data2);
-            break;
-
         case 0x4A: // Filter +
             midi.filterCtl = 0.02f * float(data2);
             break;
@@ -199,6 +195,13 @@ void Synth::controlChange (uint8_t data1, uint8_t data2)
             }
             break;
 
+    }
+
+    // Resonance is a learnable CC, so it cannot be a switch case (case labels
+    // must be constant expressions).
+    if (data1 == resoCC)
+    {
+        midi.resonanceCtl = 154.0f / float (154 - data2);
     }
 }
 

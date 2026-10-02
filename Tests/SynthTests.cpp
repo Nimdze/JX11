@@ -259,6 +259,20 @@ public:
 
             expect (!isSilent (left, n)); // first note rings
         }
+
+        beginTest ("resoCC selects which controller drives resonance");
+        {
+            fresh();
+            synth.resoCC = 0x2A;
+            synth.midiMessage (0xB0, 0x2A, 64);
+            const float learned = synth.midi.resonanceCtl;
+            expect (learned > 1.0f);
+
+            // The old hardcoded CC no longer affects resonance.
+            synth.midi.resonanceCtl = 1.0f;
+            synth.midiMessage (0xB0, 0x47, 64);
+            expectWithinAbsoluteError (synth.midi.resonanceCtl, 1.0f, 1.0e-6f);
+        }
     }
 };
 

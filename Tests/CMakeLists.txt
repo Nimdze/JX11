@@ -32,6 +32,7 @@ target_link_libraries(JX11Tests PRIVATE
     )
 
 target_compile_definitions(JX11Tests PRIVATE                                                                               
+         JX11_HEADLESS=1
          JucePlugin_Name="JX11"                                                                                                 
          JucePlugin_IsSynth=1                                                                                                   
          JucePlugin_WantsMidiInput=1                                                                                            

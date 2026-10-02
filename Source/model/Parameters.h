@@ -50,7 +50,8 @@ inline juce::String filterVelocityToText (float value, int)
 }
 inline juce::String lfoRateToText (float value, int)
 {
-    return juce::String (std::exp (7.0f * value - 4.0f), 3);
+    // Same curve the DSP uses (see Modulation.h) - format it, don't re-derive it.
+    return juce::String (lfoRateHz (value), 3);
 }
 inline juce::String vibratoToText (float value, int)
 {
@@ -97,7 +98,7 @@ inline void applyLfoRate (SynthParams& p, float v, const UpdateContext& c) noexc
 inline void applyVibrato (SynthParams& p, float v, const UpdateContext&) noexcept                  
 {                                                                                                  
     p.pwmDepth = vibratoDepth (v);                                                                 
-    p.vibrato  = (v / 200.0f < 0.0f) ? 0.0f : p.pwmDepth;                                          
+    p.vibrato  = (v < 0.0f) ? 0.0f : p.pwmDepth;                                                    
 }                                                                                                  
                                                                                                       
 inline void applyGlideMode (SynthParams& p, float v, const UpdateContext&) noexcept                
