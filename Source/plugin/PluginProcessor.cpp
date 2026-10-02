@@ -31,6 +31,7 @@ namespace
 const juce::Identifier pluginTag = "PLUGIN";
 const juce::Identifier extraTag = "EXTRA";
 const juce::Identifier midiCCAttribute = "midiCC";
+const juce::Identifier programAttribute = "program";
 } // namespace
 
 //==============================================================================
@@ -321,7 +322,15 @@ bool JX11AudioProcessor::isMidiEffect() const
 
 double JX11AudioProcessor::getTailLengthSeconds() const
 {
-    return 0.0;
+    // The amp envelope is a one-pole; a long release can take several seconds
+    // to fall below the silence threshold. Estimate it from the release
+    // parameter and clamp to a host-friendly maximum.
+    const double sr = getSampleRate() > 0.0 ? getSampleRate() : 44100.0;
+    const float releaseParam = parameterValue (Params::envRelease);
+    const double multiplier = std::exp (-1.0 / sr * std::exp (5.5 - 0.075 * static_cast<double> (releaseParam)));
+    const double tauSeconds = 1.0 / (1.0 - multiplier) / sr;
+
+    return juce::jlimit (0.0, 30.0, 10.0 * tauSeconds);
 }
 
 //==============================================================================
@@ -393,9 +402,11 @@ void JX11AudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     // All APVTS parameters live one level down, under <Parameters>.
     xml->addChildElement (apvts.copyState().createXml().release());
 
-    // Non-parameter state that should survive a save/load: the learned CC.
+    // Non-parameter state that should survive a save/load: the learned CC and
+    // the selected program index.
     auto extraXML = std::make_unique<juce::XmlElement> (extraTag);
     extraXML->setAttribute (midiCCAttribute, static_cast<int> (midiLearnCC.load (std::memory_order_relaxed)));
+    extraXML->setAttribute (programAttribute, currentProgram);
     xml->addChildElement (extraXML.release());
 
     copyXmlToBinary (*xml, destData);
@@ -420,6 +431,12 @@ void JX11AudioProcessor::setStateInformation (const void* data, int sizeInBytes)
         const int cc = extraXML->getIntAttribute (midiCCAttribute);
         if (cc > 0)
             midiLearnCC.store (static_cast<uint8_t> (cc), std::memory_order_relaxed);
+
+        // Restore only the program label; the parameter values are restored from
+        // the APVTS subtree above so user edits survive the round trip.
+        const int program = extraXML->getIntAttribute (programAttribute, -1);
+        if (program >= 0 && program < static_cast<int> (presets.size()))
+            currentProgram = program;
     }
 }
 

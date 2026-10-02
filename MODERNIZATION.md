@@ -384,17 +384,24 @@ _State: `JX11_engine` is the single compiled engine; plugin and tests link it.
 `ARCHITECTURE.md` documents the signal flow, thread model, and data flow._
 
 ### Phase 3 — Modern audio standards  *(goal 2)*
-- [ ] Initialize all DSP state (A-1).
-- [ ] Clamp filter cutoff to Nyquist (A-2) + regression test.
-- [ ] Fix the `filterZip` start-up sweep (A-3) + regression test.
-- [ ] Add parameter smoothing where it matters (A-4).
-- [ ] Compile-time sample guard, disabled in release (A-5).
-- [ ] Realistic `getTailLengthSeconds` (A-6); save `currentProgram` (A-7).
-- [ ] Encapsulation/`noexcept`/`[[nodiscard]]` tidy-up (A-9).
+- [x] Initialize all DSP state (A-1).
+- [x] Clamp filter cutoff to Nyquist (A-2) + `Filter::clampCutoff` regression test.
+- [x] Fix the `filterZip` start-up sweep (A-3) + golden regression (verified it
+      fails when the fix is reverted).
+- [x] Add parameter smoothing where it matters (A-4): detune and filter Q are
+      one-pole smoothed per sample; filter cutoff/key-tracking was already
+      smoothed through `filterZip`.
+- [x] Compile-time sample guard, disabled in release (A-5).
+- [x] Realistic `getTailLengthSeconds` (A-6); save/restore `currentProgram` (A-7).
+- [x] `[[nodiscard]]`/`noexcept` tidy-up on hot getters (A-9).
 
 **Done when:** no uninitialised reads (ASan/UBSan clean), the first note sounds
 the same as later notes, automation is click-free, and state restore reports the
 right program.
+
+_State: defaults added across the DSP types; cutoff clamped in `Filter`; golden
+fingerprint regenerated for the filter-sensitive patch and re-validated. ASan/UBSan
+in CI still pending Phase 4._
 
 ### Phase 4 — CI / tooling elevation  *(goals 1–3)*
 - [ ] CI matrix: Debug + Release, arm64 + x86_64, macOS (+ Linux if easy).

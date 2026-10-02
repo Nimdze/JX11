@@ -243,6 +243,45 @@ public:
 
             expect (lastPeak <= 1.0e-4f, "voice never released to silence");
         }
+
+        beginTest ("state round trip restores the selected program");
+        {
+            JX11AudioProcessor a;
+            a.setCurrentProgram (5);
+            expectEquals (a.getCurrentProgram(), 5);
+
+            juce::MemoryBlock block;
+            a.getStateInformation (block);
+
+            JX11AudioProcessor b;
+            b.setCurrentProgram (0);
+            expectEquals (b.getCurrentProgram(), 0);
+
+            b.setStateInformation (block.getData(), static_cast<int> (block.getSize()));
+
+            expectEquals (b.getCurrentProgram(), 5);
+            expectEquals (b.getProgramName (5), a.getProgramName (5));
+        }
+
+        beginTest ("getTailLengthSeconds reflects the release setting");
+        {
+            JX11AudioProcessor p;
+            p.setRateAndBufferSizeDetails (44100.0, 512);
+            p.prepareToPlay (44100.0, 512);
+
+            auto* release = p.apvts.getParameter (Params::kSpecs[Params::envRelease].id);
+            expect (release != nullptr);
+
+            release->setValueNotifyingHost (release->convertTo0to1 (0.0f));
+            const double shortTail = p.getTailLengthSeconds();
+
+            release->setValueNotifyingHost (release->convertTo0to1 (100.0f));
+            const double longTail = p.getTailLengthSeconds();
+
+            expect (shortTail >= 0.0 && shortTail < 1.0);
+            expect (longTail > shortTail);
+            expect (longTail <= 30.0);
+        }
     }
 };
 
