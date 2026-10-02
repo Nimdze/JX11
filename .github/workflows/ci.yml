@@ -64,7 +64,7 @@ jobs:
           /Applications/pluginval.app/Contents/MacOS/pluginval
           --strictness-level 10
           --skip-gui-tests
-          --validate "$PWD/build/Source/JX11_artefacts/${{ matrix.build_type }}/VST3/JX11.vst3"
+          --validate "$PWD/build/Source/JX11_artefacts/${{ matrix.build_type }}/VST3/JX11+.vst3"
 
       - name: Validate AU (auval)
         if: matrix.arch == 'arm64'

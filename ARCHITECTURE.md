@@ -1,6 +1,6 @@
 # Architecture
 
-This document describes how JX11.5 is put together: the layers, the signal path,
+This document describes how JX11+ is put together: the layers, the signal path,
 and — most importantly — which thread each piece of code runs on. For a
 file-by-file breakdown see [`Source/README.md`](Source/README.md).
 

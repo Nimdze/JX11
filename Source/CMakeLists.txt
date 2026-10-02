@@ -52,7 +52,7 @@ juce_add_plugin(JX11
     BUNDLE_ID "com.nimdze.JX11"
     PLUGIN_MANUFACTURER_CODE Nimd
     PLUGIN_CODE Jx11
-    PRODUCT_NAME "JX11"
+    PRODUCT_NAME "JX11+"
     DESCRIPTION "JX11 Subtractive Synth"
     FORMATS Standalone VST3 AU
     IS_SYNTH TRUE

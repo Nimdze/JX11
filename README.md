@@ -1,4 +1,4 @@
-# JX11.5
+# JX11+
 
 [![CI](https://github.com/Nimdze/JX11/actions/workflows/ci.yml/badge.svg)](https://github.com/Nimdze/JX11/actions/workflows/ci.yml)
 
@@ -94,19 +94,19 @@ Build the AU/VST3 and validate them:
 
     auval -v aumu Jx11 Nimd
     /Applications/pluginval.app/Contents/MacOS/pluginval --strictness-level 10 \
-        --validate build-vscode/Source/JX11_artefacts/Debug/VST3/JX11.vst3
+        --validate build-vscode/Source/JX11_artefacts/Debug/VST3/JX11+.vst3
 
 ## Outputs
 
 Built artefacts live under `build-vscode/Source/JX11_artefacts/Debug/`.
 Because `COPY_PLUGIN_AFTER_BUILD` is enabled, AU/VST3 are also copied to:
 
-- `~/Library/Audio/Plug-Ins/Components/JX11.component`
-- `~/Library/Audio/Plug-Ins/VST3/JX11.vst3`
+- `~/Library/Audio/Plug-Ins/Components/JX11+.component`
+- `~/Library/Audio/Plug-Ins/VST3/JX11+.vst3`
 
 Run the standalone from:
 
-    open build-vscode/Source/JX11_artefacts/Debug/Standalone/JX11.app
+    open build-vscode/Source/JX11_artefacts/Debug/Standalone/JX11+.app
 
 ## Documentation
 
